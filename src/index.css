@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: "Proxima Nova", system-ui, sans-serif;
+  }
+}
+
+html {
+  height: 100%;
+}
+body {
+  height: 100%;
+}
+
+.r-shadow {
+  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+}
+
+.r-community {
+  border-radius: 32px;
+  background: #fff;
+  box-shadow: 0px 1px 20px 0px rgba(0, 0, 0, 0.1);
+}
+
+strong{
+  @apply
+  block
+  text-black
+  text-2xl
+  font-semibold
+}
+small{
+  @apply
+  block
+  font-normal
+  text-base
+  text-dark
+}
