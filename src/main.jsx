@@ -11,10 +11,16 @@ import Community from './pages/Community.jsx'
 import Cart from './pages/Cart.jsx'
 import Add_Events from './pages/Add_Events.jsx'
 import ArtistPortfolio from './pages/ArtistPortfolio.jsx'
+import Home from './pages/Home.jsx'
+import Feed from './pages/Feed.jsx'
+import Details from './pages/Details.jsx'
+import Add_Products from './pages/Add_Products.jsx'
+import Add_Posts from './pages/Add_Posts.jsx'
+
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <App />
-    <ArtistPortfolio />
+    <Feed/>
   </StrictMode>,
 )
