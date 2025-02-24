@@ -1,7 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import logo from "../assets/images/logo.png";
 
 function Sign_up() {
+  const [fullname, setFullname] = useState()
+  const [email, setEmail] = useState()
+  const [role, setRole] = useState()
+  const [password, setPassword] = useState()
+
   return (
     <section
       className="backdrop-blur-3xl h-screen overflow-hidden flex justify-center py-20 relative before:absolute before:left-[50%] before:top-[20%] 2xl:before:top-[30%]
