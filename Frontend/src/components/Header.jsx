@@ -46,27 +46,6 @@ function Header() {
             <Link to="/events" className="text-gray-900 hover:text-primary">
               Events
             </Link>
-            <div className="relative group">
-              <button className="flex items-center text-gray-900 hover:text-gray-700">
-                Categories
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="22"
-                  height="24"
-                  viewBox="0 0 22 24"
-                  fill="none"
-                  className="ml-1"
-                >
-                  <path
-                    d="M16.0416 9.25L10.9999 14.75L5.95825 9.25"
-                    stroke="black"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-            </div>
           </nav>
 
           <div className="hidden xl:block relative w-1/3">
