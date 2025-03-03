@@ -1,38 +1,29 @@
-const express = require("express")
-const mongoose = require("mongoose")
-const cors = require("cors")
-const UserModel = require("./models/User")
+const express = require('express');
+const cors = require('cors'); // Import CORS middleware
+require('dotenv').config();  // Load environment variables
 
-const app = express()
-app.use(express.json())
-app.use(cors())
 
-mongoose.connect("mongodb://localhost:27017/user");
+const app = express();
 
-app.post('/signin',(req, res)=>{
-   const {email, password} = req.body;
-   UserModel.findOne({email: email})
-   .then(user => {
-    if(user) {
-        if(user.password === password) {
-            res.json('Success')
-        } else {
-            res.json('Password is incorrect')
-        }
-    } else {
-        res.json('User not found') 
-    }
-   })
-})
+// Enable CORS for all routes
+app.use(cors({
+    origin: 'http://localhost:5173', // Allow frontend requests
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+}));
 
-app.post('/signup',(req, res)=>{
-    UserModel.create(req.body)
-    .then(users => res.json(users))
-    .catch(err => res.json(err))
-})
+app.use(express.json()); // Parse JSON request bodies
 
-app.listen(
-    3001,()=>{
-        console.log("server is running on port 3001")
-    }
-)
+
+
+// Your routes
+const authRoutes = require('./routes/authRoute');
+const connectDB = require('./config/db');
+app.use('/api/auth', authRoutes);
+
+
+connectDB()
+const PORT = 3001;
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+});
