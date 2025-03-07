@@ -1,7 +1,14 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ProtectedRoute from "./components/ProtectedRoute";
+import EventAdmin from "./pages/EventAdmin";
+import Events from "./pages/Events";
+import Home from "./pages/Home";
+import Feed from "./pages/Feed";
+import Community from "./pages/Community";
+import AdminDashboard from "./pages/AdminDashboard"; // Assuming you have this component
+import ArtistDashboard from "./pages/ArtistDashboard"; // Assuming you have this component
 
 function App() {
   return (
@@ -12,18 +19,22 @@ function App() {
         
         {/* Protected Routes */}
         <Route element={<ProtectedRoute role="admin" />}>
-          <Route path="/admin-dashboard" element={<h1>Hello This is Admin Dashboard</h1>} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/admin-dashboard/events" element={<EventAdmin />} />
         </Route>
 
         <Route element={<ProtectedRoute role="artist" />}>
-          <Route path="/artist-dashboard" element={<h1>Hello This is Artist Dashboard</h1>} />
+          <Route path="/artist-dashboard" element={<ArtistDashboard />} />
         </Route>
 
         <Route element={<ProtectedRoute />}>
-          <Route path="/" element={<h1>Hello This is User Dashboard</h1>} />
+          <Route path="/feed" element={<Feed />} />
+          <Route path="/events" element={<Events />} />
+          <Route path="/community" element={<Community />} />
         </Route>
 
-        <Route path="/unauthorized" element={<h2>Access Denied</h2>} />
+        <Route path="/" element={<Home />} />
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
   );

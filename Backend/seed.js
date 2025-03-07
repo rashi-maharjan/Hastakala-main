@@ -1,60 +1,47 @@
 const mongoose = require('mongoose');
-const User = require('./models/Users'); // Ensure correct path to Users model
-require('dotenv').config(); // Load environment variables
+const bcrypt = require('bcryptjs');
+const User = require('./models/Users'); // Adjust path if needed
+require('dotenv').config();
 
 // Connect to MongoDB
-const connectDB = async () => {
-    try {
-        await mongoose.connect(process.env.DB_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
-        console.log('MongoDB connected');
-    } catch (error) {
-        console.error('MongoDB connection error:', error.message);
-        process.exit(1);
+mongoose.connect(process.env.DB_URI)
+  .then(() => console.log('MongoDB connected for seeding'))
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
+    process.exit(1);
+  });
+
+const seedAdmin = async () => {
+  try {
+    // Check if admin already exists
+    const adminExists = await User.findOne({ email: 'admin@gmail.com' });
+    
+    if (adminExists) {
+      console.log('Admin user already exists');
+      return;
     }
+    
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash('admin123', salt);
+    
+    // Create admin user
+    const admin = new User({
+      name: 'Administrator',
+      email: 'admin@gmail.com',
+      password: hashedPassword,
+      role: 'admin'
+    });
+    
+    await admin.save();
+    console.log('Admin user created successfully');
+  } catch (error) {
+    console.error('Error seeding admin user:', error);
+  } finally {
+    // Close the database connection
+    mongoose.connection.close();
+  }
 };
 
-// Seed data
-const seedUsers = [
-    {
-        name: 'John Doe',
-        email: 'john@example.com',
-        password: 'password123', // Note: You should hash passwords in your real app
-        role: 'normal_user',
-    },
-    {
-        name: 'Jane Smith',
-        email: 'jane@example.com',
-        password: 'password123',
-        role: 'artist',
-    },
-    {
-        name: 'Admin User',
-        email: 'admin@gmail.com',
-        password: 'admin123',
-        role: 'admin',
-    },
-];
-
-// Seed function
-const seedDB = async () => {
-    try {
-        // Clear the collection (optional, if you want to reset it)
-        await User.deleteMany({});
-        
-        // Insert seed users
-        await User.insertMany(seedUsers);
-        
-        console.log('Seed data inserted');
-    } catch (error) {
-        console.error('Seeding error:', error.message);
-    } finally {
-        // Close the database connection
-        mongoose.connection.close();
-    }
-};
-
-// Run the seed script
-connectDB().then(seedDB);
+// Execute the seeding function
+seedAdmin();

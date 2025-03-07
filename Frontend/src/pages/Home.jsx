@@ -10,7 +10,7 @@ const Home = () => {
       <div className="container z-[10] relative before:absolute before:right-[55%] before:top-[30%] 2xl:before:top-[35%] before:bg-green-500 before:rounded-full before:size-[15%] 2xl:before:size-[15%] before:-z-[1] before:blur-[105px]">
       {/* Navigation */}
       <nav className="p-6 flex justify-end">
-        <Link to='signin' className="bg-black text-white hover:bg-black/90 rounded-full px-6 py-2 text-sm font-medium transition-colors">
+        <Link to='/login' className="bg-black text-white hover:bg-black/90 rounded-full px-6 py-2 text-sm font-medium transition-colors">
           Sign In
         </Link>
       </nav>
@@ -34,7 +34,7 @@ const Home = () => {
         </p>
 
         {/* CTA Button */}
-        <Link to='signup' className="bg-[#3072E3] hover:bg-[#3072E3]/60 border-none outline-none text-white rounded-[22px] px-5 py-3 text-lg font-medium transition-colors">
+        <Link to='/register' className="bg-[#3072E3] hover:bg-[#3072E3]/60 border-none outline-none text-white rounded-[22px] px-5 py-3 text-lg font-medium transition-colors">
           Get Started
         </Link>
       </main>

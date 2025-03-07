@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import logo from "../assets/images/logo.png";
 import rashi from "../assets/images/rashi.png";
-import {Link} from "react-router-dom"
+import {Link, useLocation} from "react-router-dom"
 
 function Header() {
+  const location = useLocation();
+
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
 
   const toggleSidePanel = () => {
@@ -37,16 +39,26 @@ function Header() {
           </button>
 
           <nav className="hidden xl:flex space-x-8">
-            <Link to="/feed" className="text-gray-900 hover:text-primary">
-              Feed
-            </Link>
-            <Link to="/community" className="text-gray-900 hover:text-primary">
-              Community
-            </Link>
-            <Link to="/events" className="text-gray-900 hover:text-primary">
-              Events
-            </Link>
-          </nav>
+      <Link 
+        to="/feed" 
+        className={`text-gray-900 hover:text-primary ${location.pathname === "/feed" ? "text-primary" : ""}`}
+      >
+        Feed
+      </Link>
+      <Link 
+        to="/community" 
+        className={`text-gray-900 hover:text-primary ${location.pathname === "/community" ? "text-primary" : ""}`}
+      >
+        Community
+      </Link>
+      <Link 
+        to="/events" 
+        className={`text-gray-900 hover:text-primary ${location.pathname === "/events" ? "text-primary" : ""}`}
+      >
+        Events
+      </Link>
+    </nav>
+
 
           <div className="hidden xl:block relative w-1/3">
             <input

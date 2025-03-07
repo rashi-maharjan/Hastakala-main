@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors'); // Import CORS middleware
 require('dotenv').config();  // Load environment variables
-
+const connectDB = require('./config/db'); // Import the database connection function
 
 const app = express();
 
@@ -14,16 +14,20 @@ app.use(cors({
 
 app.use(express.json()); // Parse JSON request bodies
 
-
+// Middleware for file uploads
+app.use(express.static('public')); // Serve static files from 'public' directory
 
 // Your routes
 const authRoutes = require('./routes/authRoute');
-const connectDB = require('./config/db');
+const eventRoutes = require('./routes/eventRoute'); // Add this line
+
 app.use('/api/auth', authRoutes);
+app.use('/api', eventRoutes); // Add this line
 
+// Connect to the database
+connectDB();
 
-connectDB()
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
