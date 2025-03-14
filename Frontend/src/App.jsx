@@ -7,8 +7,8 @@ import Events from "./pages/Events";
 import Home from "./pages/Home";
 import Feed from "./pages/Feed";
 import Community from "./pages/Community";
-import AdminDashboard from "./pages/AdminDashboard"; // Assuming you have this component
-import ArtistDashboard from "./pages/ArtistDashboard"; // Assuming you have this component
+import AdminDashboard from "./pages/AdminDashboard";
+import ArtistDashboard from "./pages/ArtistDashboard";
 
 function App() {
   return (
@@ -30,7 +30,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/feed" element={<Feed />} />
           <Route path="/events" element={<Events />} />
-          <Route path="/community" element={<Community />} />
+          <Route path="/community" element={<Community />} /> {/* New Route for Individual Post */}
         </Route>
 
         <Route path="/" element={<Home />} />
