@@ -14,10 +14,17 @@ const Login = () => {
     try {
       const response = await axios.post("http://localhost:3001/api/auth/login", { email, password });
       const { token, user } = response.data;
-
+  
+      // Store token and role as before
       localStorage.setItem("token", token);
       localStorage.setItem("role", user.role);
-
+      
+      // IMPORTANT: Also store the complete user object
+      localStorage.setItem("user", JSON.stringify(user));
+      
+      console.log("User data saved to localStorage:", user);
+  
+      // Continue with navigation based on role
       switch (user.role) {
         case "admin":
           navigate("/admin-dashboard");

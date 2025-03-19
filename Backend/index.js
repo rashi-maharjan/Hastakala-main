@@ -12,6 +12,12 @@ app.use(cors({
   credentials: true
 }));
 
+// Add request logger to help debug
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
+  next();
+});
+
 app.use(express.json()); // Parse incoming JSON requests
 
 // Middleware for file uploads
@@ -24,7 +30,7 @@ const communityRoutes = require('./routes/communityRoute');
 
 app.use('/api/auth', authRoutes);
 app.use('/api', eventRoutes);
-app.use('/api', communityRoutes);
+app.use('/api', communityRoutes); // Changed from '/api/community' to '/api'
 
 // Connect to the database
 connectDB();

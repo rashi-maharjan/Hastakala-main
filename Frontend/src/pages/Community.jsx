@@ -1,249 +1,308 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
-import { FaRegThumbsUp, FaThumbsUp, FaTrash } from "react-icons/fa";
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 const Community = () => {
   const [posts, setPosts] = useState([]);
-  const [newPost, setNewPost] = useState({ title: "", content: "" });
-  const [commentText, setCommentText] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [deletingComment, setDeletingComment] = useState(null);
-  const token = localStorage.getItem("token");
-  const userId = localStorage.getItem("userId");
-  const userName = localStorage.getItem("userName"); // Add this line to get the user's name
+  const [newPostTitle, setNewPostTitle] = useState('');
+  const [newPostContent, setNewPostContent] = useState('');
+  const [newComment, setNewComment] = useState('');
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    fetchPosts();
+    const fetchUserProfile = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.log('No token found, user is not authenticated');
+          setIsAuthenticated(false);
+          setIsLoading(false);
+          fetchPosts(); // Still fetch posts even if not authenticated
+          return;
+        }
+
+        console.log('Token found, checking if user data exists');
+        
+        // First try to get user data from localStorage
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          try {
+            const userData = JSON.parse(userStr);
+            console.log('User data found in localStorage:', userData);
+            setUser(userData);
+            setIsAuthenticated(true);
+            setIsLoading(false);
+            fetchPosts();
+            return;
+          } catch (error) {
+            console.error('Error parsing user data from localStorage:', error);
+            // Continue to fetch from server
+          }
+        }
+        
+        // If we don't have user data in localStorage, fetch it from the server
+        console.log('Fetching user profile from server...');
+        const response = await axios.get('http://localhost:3001/api/auth/profile', {
+          headers: { 'Authorization': token }
+        });
+        
+        if (response.data && response.data.user) {
+          console.log('User profile fetched from server:', response.data.user);
+          setUser(response.data.user);
+          setIsAuthenticated(true);
+          
+          // Save to localStorage for future use
+          localStorage.setItem('user', JSON.stringify(response.data.user));
+        } else {
+          console.log('No user data returned from server');
+        }
+      } catch (error) {
+        console.error('Error getting user profile:', error);
+        if (error.response && error.response.status === 401) {
+          // Token expired or invalid
+          localStorage.removeItem('token');
+          setIsAuthenticated(false);
+        }
+      } finally {
+        setIsLoading(false);
+        fetchPosts();
+      }
+    };
+
+    fetchUserProfile();
   }, []);
 
   const fetchPosts = async () => {
     try {
-      const res = await axios.get("http://localhost:3001/api/posts", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setPosts(res.data.posts);
+      const response = await axios.get('http://localhost:3001/api/posts');
+      if (Array.isArray(response.data)) {
+        setPosts(response.data);
+      } else {
+        console.error('Expected an array, but received:', response.data);
+      }
     } catch (error) {
-      console.error("Error fetching posts:", error);
+      console.error('Error fetching posts:', error);
     }
   };
 
-  const handleCreatePost = async () => {
-    if (!newPost.title || !newPost.content) {
-      alert("Title and content are required.");
+  const handlePostSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!isAuthenticated) {
+      alert('Please log in to create a post');
       return;
     }
-
-    setLoading(true);
+    
     try {
-      const response = await axios.post(
-        "http://localhost:3001/api/posts",
-        newPost,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      const token = localStorage.getItem('token');
+      
+      const newPost = {
+        title: newPostTitle,
+        content: newPostContent,
+        username: user?.name || user?.email || 'Anonymous'
+      };
+      
+      await axios.post('http://localhost:3001/api/posts', newPost, {
+        headers: {
+          'Authorization': token
         }
-      );
-      
-      // Make sure the user name is displayed immediately
-      const newPostWithUserInfo = response.data;
-      
-      // If the user name is still not populated, inject it manually
-      if (!newPostWithUserInfo.user || !newPostWithUserInfo.user.name) {
-        newPostWithUserInfo.user = { 
-          _id: userId,
-          name: userName || localStorage.getItem("name") || "Me" 
-        };
-      }
-      
-      setPosts([newPostWithUserInfo, ...posts]);
-      setNewPost({ title: "", content: "" });
-    } catch (error) {
-      console.error("Error creating post:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleComment = async (postId) => {
-    if (!commentText[postId]) return;
-
-    try {
-      const response = await axios.post(
-        `http://localhost:3001/api/posts/${postId}/comments`,
-        { content: commentText[postId] },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      setCommentText({ ...commentText, [postId]: "" });
-      
-      // Update just the specific post with the new comment
-      const updatedPosts = posts.map(post => 
-        post._id === postId ? response.data : post
-      );
-      setPosts(updatedPosts);
-    } catch (error) {
-      console.error("Error adding comment:", error);
-    }
-  };
-
-  const toggleLike = async (postId, commentId) => {
-    try {
-      const response = await axios.put(
-        `http://localhost:3001/api/posts/${postId}/comments/${commentId}/like`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      // Update just the specific post with the updated likes
-      const updatedPosts = posts.map(post => 
-        post._id === postId ? response.data : post
-      );
-      setPosts(updatedPosts);
-    } catch (error) {
-      console.error("Error liking comment:", error);
-    }
-  };
-
-  const handleDeleteComment = async (postId, commentId) => {
-    setDeletingComment(commentId);
-    try {
-      await axios.delete(
-        `http://localhost:3001/api/posts/${postId}/comments/${commentId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      // Update the UI by removing the deleted comment
-      const updatedPosts = posts.map(post => {
-        if (post._id === postId) {
-          return {
-            ...post,
-            comments: post.comments.filter(comment => comment._id !== commentId)
-          };
-        }
-        return post;
       });
       
-      setPosts(updatedPosts);
+      setNewPostTitle('');
+      setNewPostContent('');
+      fetchPosts();
     } catch (error) {
-      console.error("Error deleting comment:", error);
-    } finally {
-      setDeletingComment(null);
+      console.error('Error creating post:', error);
+      if (error.response) {
+        alert(`Error: ${error.response.data.error || 'Something went wrong'}`);
+      }
     }
   };
 
-  return (
-    <div className="max-w-3xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Community Posts</h1>
+  const handleCommentSubmit = async (postId) => {
+    if (!isAuthenticated) {
+      alert('Please log in to comment');
+      return;
+    }
+    
+    if (!newComment.trim()) {
+      alert('Comment cannot be empty');
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('token');
+      
+      const commentData = {
+        comment_text: newComment,
+        username: user?.name || user?.email || 'Anonymous'
+      };
+      
+      await axios.post(`http://localhost:3001/api/posts/${postId}/comments`, commentData, {
+        headers: {
+          'Authorization': token
+        }
+      });
+      
+      setNewComment('');
+      fetchPosts();
+    } catch (error) {
+      console.error('Error creating comment:', error);
+      if (error.response) {
+        alert(`Error: ${error.response.data.error || 'Something went wrong'}`);
+      }
+    }
+  };
 
-      {/* Create Post */}
-      <div className="bg-white p-4 shadow rounded mb-6">
+  const handleLike = async (postId) => {
+    if (!isAuthenticated) {
+      alert('Please log in to like a post');
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('token');
+      
+      await axios.post(`http://localhost:3001/api/posts/${postId}/like`, {}, {
+        headers: {
+          'Authorization': token
+        }
+      });
+      
+      fetchPosts();
+    } catch (error) {
+      console.error('Error liking post:', error);
+      if (error.response && error.response.status === 400 && error.response.data.error === 'You already liked this post') {
+        // If user already liked, try to unlike
+        try {
+          const token = localStorage.getItem('token');
+          await axios.delete(`http://localhost:3001/api/posts/${postId}/unlike`, {
+            headers: {
+              'Authorization': token
+            }
+          });
+          
+          fetchPosts();
+        } catch (unlikeError) {
+          console.error('Error unliking post:', unlikeError);
+        }
+      } else if (error.response) {
+        alert(`Error: ${error.response.data.error || 'Something went wrong'}`);
+      }
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto p-4 text-center">
+        <p>Loading community posts...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto p-4">
+      {/* Login status */}
+      {isAuthenticated ? (
+        <div className="bg-green-100 p-3 mb-4 rounded">
+          <p>Logged in as <strong>{user?.name || user?.email || 'User'}</strong></p>
+        </div>
+      ) : (
+        <div className="bg-yellow-100 p-3 mb-4 rounded">
+          <p>Please log in to create posts and comments</p>
+        </div>
+      )}
+
+      {/* New Post Form */}
+      <form onSubmit={handlePostSubmit} className="mb-6">
         <input
           type="text"
+          className="w-full p-2 border border-gray-300 rounded mb-2"
           placeholder="Post Title"
-          value={newPost.title}
-          onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
-          className="w-full p-2 border rounded mb-2"
+          value={newPostTitle}
+          onChange={(e) => setNewPostTitle(e.target.value)}
+          required
+          disabled={!isAuthenticated}
         />
         <textarea
-          placeholder="Write something..."
-          value={newPost.content}
-          onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
-          className="w-full p-2 border rounded mb-2"
-        />
-        <button
-          onClick={handleCreatePost}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-          disabled={loading}
+          className="w-full p-2 border border-gray-300 rounded mb-2"
+          placeholder={isAuthenticated ? "Write something..." : "Please log in to create a post"}
+          value={newPostContent}
+          onChange={(e) => setNewPostContent(e.target.value)}
+          required
+          disabled={!isAuthenticated}
+        ></textarea>
+        <button 
+          type="submit" 
+          className={`px-4 py-2 ${isAuthenticated ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-400'} text-white rounded`}
+          disabled={!isAuthenticated}
         >
-          {loading ? "Posting..." : "Post"}
+          Create Post
         </button>
-      </div>
+      </form>
 
-      {/* List of Posts */}
-      {posts.length === 0 ? (
-        <p>No posts available.</p>
-      ) : (
+      {/* Community Posts */}
+      {posts.length > 0 ? (
         posts.map((post) => (
-          <div key={post._id} className="bg-white p-4 shadow rounded mb-6">
-            <h2 className="text-lg font-semibold">{post.title}</h2>
-            <p className="text-gray-700">{post.content}</p>
-            <p className="text-sm text-gray-500">
-              By: {post.user?.name || localStorage.getItem("userName") || "Unknown User"}
-            </p>
-
-            {/* Comment Input */}
-            <div className="mt-4">
-              <input
-                type="text"
-                placeholder="Write a comment..."
-                value={commentText[post._id] || ""}
-                onChange={(e) =>
-                  setCommentText({ ...commentText, [post._id]: e.target.value })
-                }
-                className="w-full p-2 border rounded"
-              />
+          <div key={post._id} className="mb-6 p-4 border rounded-lg shadow-md">
+            <div className="flex justify-between items-center mb-3">
+              <div>
+                <h2 className="text-xl font-semibold">{post.title}</h2>
+                <p className="text-sm text-gray-600">Posted by: {post.username || "Anonymous"}</p>
+              </div>
+              <div className="text-gray-500 text-sm">{new Date(post.created_at).toLocaleString()}</div>
+            </div>
+            <p className="text-gray-800 mb-3">{post.content}</p>
+            <div className="flex items-center space-x-4 mb-3">
               <button
-                onClick={() => handleComment(post._id)}
-                className="bg-green-500 text-white px-4 py-2 rounded mt-2"
+                className={`px-4 py-2 ${isAuthenticated ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400'} text-white rounded`}
+                onClick={() => handleLike(post._id)}
+                disabled={!isAuthenticated}
               >
-                Comment
+                Like ({post.likes_count})
+              </button>
+              <span className="text-gray-600">Comments ({post.comments_count || 0})</span>
+            </div>
+            
+            {/* Comment Form */}
+            <div className="mb-4">
+              <textarea
+                className="w-full p-2 border border-gray-300 rounded mb-2"
+                placeholder={isAuthenticated ? "Add a comment..." : "Please log in to comment"}
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                disabled={!isAuthenticated}
+              ></textarea>
+              <button
+                className={`px-4 py-2 ${isAuthenticated ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-400'} text-white rounded`}
+                onClick={() => handleCommentSubmit(post._id)}
+                disabled={!isAuthenticated || !newComment.trim()}
+              >
+                Post Comment
               </button>
             </div>
-
-            {/* Comments */}
-            <div className="mt-4">
-              {Array.isArray(post.comments) && post.comments.length > 0 ? (
-                post.comments.map((comment) => (
-                  <div
-                    key={comment._id}
-                    className="bg-gray-100 p-3 rounded mb-2"
-                  >
-                    <div className="flex justify-between">
-                      <p className="text-gray-800">
-                        <span className="font-semibold">
-                          {comment.user?.name || "Anonymous"}:{" "}
-                        </span>
-                        {comment.content}
-                      </p>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => toggleLike(post._id, comment._id)}
-                          className="flex items-center"
-                        >
-                          {comment.likes.includes(userId) ? (
-                            <FaThumbsUp className="text-blue-500" />
-                          ) : (
-                            <FaRegThumbsUp />
-                          )}
-                          <span className="ml-1 text-gray-600">
-                            {comment.likes.length}
-                          </span>
-                        </button>
-                        
-                        {/* Delete button - Only visible to comment owner */}
-                        {comment.user?._id === userId && (
-                          <button
-                            onClick={() => handleDeleteComment(post._id, comment._id)}
-                            disabled={deletingComment === comment._id}
-                            className="text-red-500 hover:text-red-700"
-                            title="Delete comment"
-                          >
-                            <FaTrash />
-                          </button>
-                        )}
-                      </div>
+            
+            {/* Comments List */}
+            {post.comments && post.comments.length > 0 && (
+              <div className="space-y-4">
+                {post.comments.map((comment) => (
+                  <div key={comment._id} className="p-4 border-t">
+                    <div className="flex justify-between items-center mb-1">
+                      <p className="font-medium">{comment.username || "Anonymous"}</p>
+                      <span className="text-gray-500 text-sm">
+                        {new Date(comment.created_at).toLocaleString()}
+                      </span>
                     </div>
+                    <p>{comment.comment_text}</p>
                   </div>
-                ))
-              ) : (
-                <p className="text-sm text-gray-500">No comments yet.</p>
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         ))
+      ) : (
+        <p className="text-center text-gray-500">No posts available</p>
       )}
     </div>
   );

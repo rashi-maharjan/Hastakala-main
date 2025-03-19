@@ -1,143 +1,208 @@
-const express = require('express');
+const express = require("express");
+const mongoose = require("mongoose");
+const CommunityPost = require("../models/CommunityPost");
+const Comment = require("../models/Comment");
+const Like = require("../models/Like");
+const { authenticateUser } = require("../middleware/authMiddleware");
+
 const router = express.Router();
-const CommunityPost = require('../models/CommunityPost');
-const { authenticateUser } = require('../middleware/authMiddleware'); // Import the middleware
 
-// Create a new post
-// Create a new post
-// Create a new post
-router.post('/posts', authenticateUser, async (req, res) => {
-    const { title, content } = req.body;
-    const userId = req.user.userId;  // Make sure you're using the correct field (userId or _id)
-
-    console.log("User ID when creating post:", userId); // Log userId to verify it's correct
-
+// Get all community posts (public route)
+router.get("/posts", async (req, res) => {
     try {
-        const newPost = new CommunityPost({
-            user: userId, // Save the userId correctly here
-            title,
-            content,
-        });
-
-        await newPost.save();
-        res.status(201).json(newPost);
-    } catch (error) {
-        console.error('Error creating post:', error);
-        res.status(500).json({ message: 'Error creating post' });
+        const posts = await CommunityPost.find().sort({ created_at: -1 });
+        
+        // Get comments for each post
+        const postsWithComments = await Promise.all(
+            posts.map(async (post) => {
+                const postObj = post.toObject();
+                const comments = await Comment.find({ post_id: post._id }).sort({ created_at: -1 });
+                postObj.comments = comments;
+                return postObj;
+            })
+        );
+        
+        res.status(200).json(postsWithComments);
+    } catch (err) {
+        console.error("Error fetching posts:", err);
+        res.status(500).json({ error: err.message });
     }
 });
 
-// Get all posts
-// Get all posts
-router.get('/posts', async (req, res) => {
+// Create a community post
+router.post("/posts", authenticateUser, async (req, res) => {
     try {
-        const posts = await CommunityPost.find()
-            .populate('user', 'name') // Populate user field
-            .populate('comments.user', 'name') // Populate user in comments as well
-            .sort({ createdAt: -1 }); // Sort posts by most recent
-
-        console.log('Fetched posts:', posts); // Log the posts to check if `user` is populated correctly
-        res.json({ posts });
-    } catch (error) {
-        console.error('Error fetching posts:', error);
-        res.status(500).json({ message: 'Error fetching posts' });
-    }
-});
-
-
-// Add a comment to a post
-router.post('/posts/:postId/comments', authenticateUser, async (req, res) => { // Apply authenticateUser middleware
-    const { content } = req.body;
-    const { postId } = req.params;
-    const userId = req.user._id; // Access the authenticated user
-
-    try {
-        const post = await CommunityPost.findById(postId);
-
-        if (!post) {
-            return res.status(404).json({ message: 'Post not found' });
+        const { title, content, username } = req.body;
+        const user_id = req.user.userId;
+        
+        console.log("Creating post with:", { user_id, username, title });
+        
+        // Validate required fields
+        if (!title) {
+            return res.status(400).json({ error: "title is required" });
         }
-
-        post.comments.push({ user: userId, content });
+        if (!content) {
+            return res.status(400).json({ error: "content is required" });
+        }
+        
+        const post = new CommunityPost({ 
+            user_id, 
+            username: username || "Anonymous", 
+            title, 
+            content 
+        });
+        
         await post.save();
         res.status(201).json(post);
-    } catch (error) {
-        console.error('Error adding comment:', error);
-        res.status(500).json({ message: 'Error adding comment' });
+    } catch (err) {
+        console.error("Error creating post:", err);
+        res.status(500).json({ error: err.message });
     }
 });
 
-// Like a comment
-router.put('/posts/:postId/comments/:commentId/like', authenticateUser, async (req, res) => { // Apply authenticateUser middleware
-    const { postId, commentId } = req.params;
-    const userId = req.user._id; // Access the authenticated user
-
+// Get a single community post by ID
+router.get("/posts/:id", async (req, res) => {
     try {
-        const post = await CommunityPost.findById(postId);
-
-        if (!post) {
-            return res.status(404).json({ message: 'Post not found' });
-        }
-
-        const comment = post.comments.id(commentId);
-
-        if (!comment) {
-            return res.status(404).json({ message: 'Comment not found' });
-        }
-
-        // Toggle like
-        const likeIndex = comment.likes.indexOf(userId);
-        if (likeIndex === -1) {
-            // User hasn't liked the comment yet, add like
-            comment.likes.push(userId);
-        } else {
-            // User has already liked the comment, remove like
-            comment.likes.splice(likeIndex, 1);
-        }
-
-        await post.save();
-        res.status(200).json(post);
-    } catch (error) {
-        console.error('Error liking comment:', error);
-        res.status(500).json({ message: 'Error liking comment' });
+        const post = await CommunityPost.findById(req.params.id);
+        if (!post) return res.status(404).json({ error: "Post not found" });
+        
+        const postObj = post.toObject();
+        const comments = await Comment.find({ post_id: req.params.id }).sort({ created_at: -1 });
+        postObj.comments = comments;
+        
+        res.status(200).json(postObj);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
-// Delete a comment
-// Delete a comment
-// Delete a comment
-router.delete('/posts/:postId/comments/:commentId', authenticateUser, async (req, res) => {
-    const { postId, commentId } = req.params;
-    const userId = req.user._id; // Get the userId from the authenticated user
 
+// Update a community post
+router.put("/posts/:id", authenticateUser, async (req, res) => {
     try {
-        const post = await CommunityPost.findById(postId);
-
-        if (!post) {
-            return res.status(404).json({ message: 'Post not found' });
+        const { title, content } = req.body;
+        
+        // Find post and check ownership
+        const post = await CommunityPost.findById(req.params.id);
+        if (!post) return res.status(404).json({ error: "Post not found" });
+        
+        // Check if user is the owner of the post
+        if (post.user_id.toString() !== req.user.userId) {
+            return res.status(403).json({ error: "Not authorized to update this post" });
         }
-
-        // Find the comment by its ID
-        const comment = post.comments.id(commentId);
-
-        if (!comment) {
-            return res.status(404).json({ message: 'Comment not found' });
-        }
-
-        // Check if the authenticated user is the one who posted the comment
-        if (comment.user.toString() !== userId.toString()) {
-            return res.status(403).json({ message: 'You can only delete your own comments' });
-        }
-
-        // Remove the comment
-        post.comments.pull(commentId); // This is an alternative to comment.remove()
-        await post.save();
-
-        res.status(200).json({ message: 'Comment deleted successfully' });
-    } catch (error) {
-        console.error('Error deleting comment:', error);
-        res.status(500).json({ message: 'Error deleting comment' });
+        
+        const updatedPost = await CommunityPost.findByIdAndUpdate(
+            req.params.id,
+            { title, content },
+            { new: true }
+        );
+        
+        res.status(200).json(updatedPost);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
+// Delete a community post
+router.delete("/posts/:id", authenticateUser, async (req, res) => {
+    try {
+        // Find post and check ownership
+        const post = await CommunityPost.findById(req.params.id);
+        if (!post) return res.status(404).json({ error: "Post not found" });
+        
+        // Check if user is the owner of the post
+        if (post.user_id.toString() !== req.user.userId) {
+            return res.status(403).json({ error: "Not authorized to delete this post" });
+        }
+        
+        await CommunityPost.findByIdAndDelete(req.params.id);
+        await Comment.deleteMany({ post_id: req.params.id });
+        await Like.deleteMany({ post_id: req.params.id });
+        
+        res.status(200).json({ message: "Post deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Add a comment to a post
+router.post("/posts/:id/comments", authenticateUser, async (req, res) => {
+    try {
+        const { comment_text, username } = req.body;
+        const user_id = req.user.userId;
+        
+        // Validate required fields
+        if (!comment_text) {
+            return res.status(400).json({ error: "comment_text is required" });
+        }
+        
+        const comment = new Comment({ 
+            post_id: req.params.id, 
+            user_id,
+            username: username || "Anonymous",
+            comment_text 
+        });
+        
+        await comment.save();
+        await CommunityPost.findByIdAndUpdate(req.params.id, { $inc: { comments_count: 1 } });
+        
+        res.status(201).json(comment);
+    } catch (err) {
+        console.error("Error creating comment:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Like a post
+router.post("/posts/:id/like", authenticateUser, async (req, res) => {
+    try {
+        const user_id = req.user.userId;
+        
+        // Check if user already liked this post
+        const existingLike = await Like.findOne({ post_id: req.params.id, user_id });
+        if (existingLike) {
+            return res.status(400).json({ error: "You already liked this post" });
+        }
+        
+        // Create new like
+        const like = new Like({ post_id: req.params.id, user_id });
+        await like.save();
+        
+        // Increment likes count
+        await CommunityPost.findByIdAndUpdate(req.params.id, { $inc: { likes_count: 1 } });
+        
+        res.status(201).json(like);
+    } catch (err) {
+        console.error("Error liking post:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Unlike a post
+router.delete("/posts/:id/unlike", authenticateUser, async (req, res) => {
+    try {
+        const user_id = req.user.userId;
+        
+        // Find and delete like
+        const like = await Like.findOneAndDelete({ post_id: req.params.id, user_id });
+        if (!like) {
+            return res.status(400).json({ error: "You haven't liked this post" });
+        }
+        
+        // Decrement likes count
+        await CommunityPost.findByIdAndUpdate(req.params.id, { $inc: { likes_count: -1 } });
+        
+        res.status(200).json({ message: "Post unliked successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Debug route
+router.get("/debug", (req, res) => {
+    res.status(200).json({ 
+        message: "Community API is working", 
+        timestamp: new Date().toISOString() 
+    });
+});
 
 module.exports = router;

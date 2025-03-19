@@ -1,41 +1,13 @@
-const mongoose = require('mongoose');  // Import mongoose
+const mongoose = require("mongoose");
 
-// Define your community post schema
-const communityPostSchema = new mongoose.Schema({
-    user: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true, // Ensure the user field is required
-    },
-    title: {
-        type: String,
-        required: true,
-    },
-    content: {
-        type: String,
-        required: true,
-    },
-    comments: [
-        {
-            user: {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: 'User',
-            },
-            content: {
-                type: String,
-                required: true,
-            },
-            likes: [
-                {
-                    type: mongoose.Schema.Types.ObjectId,
-                    ref: 'User',
-                },
-            ],
-        },
-    ],
-}, { timestamps: true });
+const CommunityPostSchema = new mongoose.Schema({
+  user_id: { type: mongoose.Schema.Types.ObjectId, required: true },
+  username: { type: String, default: "Anonymous" }, // Added username field
+  title: { type: String, required: true },
+  content: { type: String, required: true },
+  likes_count: { type: Number, default: 0 },
+  comments_count: { type: Number, default: 0 },
+  created_at: { type: Date, default: Date.now },
+});
 
-// Create the model
-const CommunityPost = mongoose.model('CommunityPost', communityPostSchema);
-
-module.exports = CommunityPost;
+module.exports = mongoose.model("CommunityPost", CommunityPostSchema);
