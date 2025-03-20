@@ -98,6 +98,7 @@ router.put("/posts/:id", authenticateUser, async (req, res) => {
         
         res.status(200).json(updatedPost);
     } catch (err) {
+        console.error("Error updating post:", err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -120,6 +121,7 @@ router.delete("/posts/:id", authenticateUser, async (req, res) => {
         
         res.status(200).json({ message: "Post deleted successfully" });
     } catch (err) {
+        console.error("Error deleting post:", err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -148,6 +150,62 @@ router.post("/posts/:id/comments", authenticateUser, async (req, res) => {
         res.status(201).json(comment);
     } catch (err) {
         console.error("Error creating comment:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Update a comment
+router.put("/posts/:postId/comments/:commentId", authenticateUser, async (req, res) => {
+    try {
+        const { comment_text } = req.body;
+        
+        // Validate required fields
+        if (!comment_text) {
+            return res.status(400).json({ error: "comment_text is required" });
+        }
+        
+        // Find comment and check ownership
+        const comment = await Comment.findById(req.params.commentId);
+        if (!comment) return res.status(404).json({ error: "Comment not found" });
+        
+        // Check if user is the owner of the comment
+        if (comment.user_id.toString() !== req.user.userId) {
+            return res.status(403).json({ error: "Not authorized to update this comment" });
+        }
+        
+        const updatedComment = await Comment.findByIdAndUpdate(
+            req.params.commentId,
+            { comment_text },
+            { new: true }
+        );
+        
+        res.status(200).json(updatedComment);
+    } catch (err) {
+        console.error("Error updating comment:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Delete a comment
+router.delete("/posts/:postId/comments/:commentId", authenticateUser, async (req, res) => {
+    try {
+        // Find comment and check ownership
+        const comment = await Comment.findById(req.params.commentId);
+        if (!comment) return res.status(404).json({ error: "Comment not found" });
+        
+        // Check if user is the owner of the comment
+        if (comment.user_id.toString() !== req.user.userId) {
+            return res.status(403).json({ error: "Not authorized to delete this comment" });
+        }
+        
+        await Comment.findByIdAndDelete(req.params.commentId);
+        
+        // Decrement the comments count for the post
+        await CommunityPost.findByIdAndUpdate(req.params.postId, { $inc: { comments_count: -1 } });
+        
+        res.status(200).json({ message: "Comment deleted successfully" });
+    } catch (err) {
+        console.error("Error deleting comment:", err);
         res.status(500).json({ error: err.message });
     }
 });

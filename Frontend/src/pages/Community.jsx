@@ -6,6 +6,11 @@ const Community = () => {
   const [newPostTitle, setNewPostTitle] = useState('');
   const [newPostContent, setNewPostContent] = useState('');
   const [newComment, setNewComment] = useState('');
+  const [editingPost, setEditingPost] = useState(null);
+  const [editingComment, setEditingComment] = useState(null);
+  const [editPostTitle, setEditPostTitle] = useState('');
+  const [editPostContent, setEditPostContent] = useState('');
+  const [editCommentText, setEditCommentText] = useState('');
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -193,6 +198,132 @@ const Community = () => {
     }
   };
 
+  // Start editing a post
+  const startEditPost = (post) => {
+    setEditingPost(post._id);
+    setEditPostTitle(post.title);
+    setEditPostContent(post.content);
+  };
+
+  // Cancel editing a post
+  const cancelEditPost = () => {
+    setEditingPost(null);
+    setEditPostTitle('');
+    setEditPostContent('');
+  };
+
+  // Save edited post
+  const saveEditedPost = async (postId) => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      await axios.put(`http://localhost:3001/api/posts/${postId}`, {
+        title: editPostTitle,
+        content: editPostContent
+      }, {
+        headers: {
+          'Authorization': token
+        }
+      });
+      
+      setEditingPost(null);
+      fetchPosts();
+    } catch (error) {
+      console.error('Error updating post:', error);
+      if (error.response) {
+        alert(`Error: ${error.response.data.error || 'Something went wrong'}`);
+      }
+    }
+  };
+
+  // Delete a post
+  const deletePost = async (postId) => {
+    if (!window.confirm('Are you sure you want to delete this post?')) {
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('token');
+      
+      await axios.delete(`http://localhost:3001/api/posts/${postId}`, {
+        headers: {
+          'Authorization': token
+        }
+      });
+      
+      fetchPosts();
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      if (error.response) {
+        alert(`Error: ${error.response.data.error || 'Something went wrong'}`);
+      }
+    }
+  };
+
+  // Start editing a comment
+  const startEditComment = (comment) => {
+    setEditingComment(comment._id);
+    setEditCommentText(comment.comment_text);
+  };
+
+  // Cancel editing a comment
+  const cancelEditComment = () => {
+    setEditingComment(null);
+    setEditCommentText('');
+  };
+
+  // Save edited comment
+  const saveEditedComment = async (postId, commentId) => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      await axios.put(`http://localhost:3001/api/posts/${postId}/comments/${commentId}`, {
+        comment_text: editCommentText
+      }, {
+        headers: {
+          'Authorization': token
+        }
+      });
+      
+      setEditingComment(null);
+      fetchPosts();
+    } catch (error) {
+      console.error('Error updating comment:', error);
+      if (error.response) {
+        alert(`Error: ${error.response.data.error || 'Something went wrong'}`);
+      }
+    }
+  };
+
+  // Delete a comment
+  const deleteComment = async (postId, commentId) => {
+    if (!window.confirm('Are you sure you want to delete this comment?')) {
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('token');
+      
+      await axios.delete(`http://localhost:3001/api/posts/${postId}/comments/${commentId}`, {
+        headers: {
+          'Authorization': token
+        }
+      });
+      
+      fetchPosts();
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      if (error.response) {
+        alert(`Error: ${error.response.data.error || 'Something went wrong'}`);
+      }
+    }
+  };
+
+  // Check if the current user is the owner of a post or comment
+  const isOwner = (itemUserId) => {
+    return user && (user.id === itemUserId || user._id === itemUserId);
+  };
+
   if (isLoading) {
     return (
       <div className="max-w-4xl mx-auto p-4 text-center">
@@ -204,15 +335,7 @@ const Community = () => {
   return (
     <div className="max-w-4xl mx-auto p-4">
       {/* Login status */}
-      {isAuthenticated ? (
-        <div className="bg-green-100 p-3 mb-4 rounded">
-          <p>Logged in as <strong>{user?.name || user?.email || 'User'}</strong></p>
-        </div>
-      ) : (
-        <div className="bg-yellow-100 p-3 mb-4 rounded">
-          <p>Please log in to create posts and comments</p>
-        </div>
-      )}
+      <h1 className='text-4xl mb-5'>Community Posts</h1>
 
       {/* New Post Form */}
       <form onSubmit={handlePostSubmit} className="mb-6">
@@ -246,14 +369,68 @@ const Community = () => {
       {posts.length > 0 ? (
         posts.map((post) => (
           <div key={post._id} className="mb-6 p-4 border rounded-lg shadow-md">
-            <div className="flex justify-between items-center mb-3">
-              <div>
-                <h2 className="text-xl font-semibold">{post.title}</h2>
-                <p className="text-sm text-gray-600">Posted by: {post.username || "Anonymous"}</p>
+            {editingPost === post._id ? (
+              // Edit Post Form
+              <div className="mb-4">
+                <input
+                  type="text"
+                  className="w-full p-2 border border-gray-300 rounded mb-2"
+                  value={editPostTitle}
+                  onChange={(e) => setEditPostTitle(e.target.value)}
+                  required
+                />
+                <textarea
+                  className="w-full p-2 border border-gray-300 rounded mb-2"
+                  value={editPostContent}
+                  onChange={(e) => setEditPostContent(e.target.value)}
+                  required
+                ></textarea>
+                <div className="flex space-x-2">
+                  <button
+                    className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                    onClick={() => saveEditedPost(post._id)}
+                  >
+                    Save
+                  </button>
+                  <button
+                    className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                    onClick={cancelEditPost}
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
-              <div className="text-gray-500 text-sm">{new Date(post.created_at).toLocaleString()}</div>
-            </div>
-            <p className="text-gray-800 mb-3">{post.content}</p>
+            ) : (
+              // Post Display
+              <>
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h2 className="text-xl font-semibold">{post.title}</h2>
+                    <p className="text-sm text-gray-600">Posted by: {post.username || "Anonymous"}</p>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="text-gray-500 text-sm mr-4">{new Date(post.created_at).toLocaleString()}</div>
+                    {isOwner(post.user_id) && (
+                      <div className="flex space-x-1">
+                        <button
+                          className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                          onClick={() => startEditPost(post)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                          onClick={() => deletePost(post._id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <p className="text-gray-800 mb-3">{post.content}</p>
+              </>
+            )}
             <div className="flex items-center space-x-4 mb-3">
               <button
                 className={`px-4 py-2 ${isAuthenticated ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400'} text-white rounded`}
@@ -288,13 +465,60 @@ const Community = () => {
               <div className="space-y-4">
                 {post.comments.map((comment) => (
                   <div key={comment._id} className="p-4 border-t">
-                    <div className="flex justify-between items-center mb-1">
-                      <p className="font-medium">{comment.username || "Anonymous"}</p>
-                      <span className="text-gray-500 text-sm">
-                        {new Date(comment.created_at).toLocaleString()}
-                      </span>
-                    </div>
-                    <p>{comment.comment_text}</p>
+                    {editingComment === comment._id ? (
+                      // Edit Comment Form
+                      <div>
+                        <textarea
+                          className="w-full p-2 border border-gray-300 rounded mb-2"
+                          value={editCommentText}
+                          onChange={(e) => setEditCommentText(e.target.value)}
+                          required
+                        ></textarea>
+                        <div className="flex space-x-2">
+                          <button
+                            className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+                            onClick={() => saveEditedComment(post._id, comment._id)}
+                          >
+                            Save
+                          </button>
+                          <button
+                            className="px-2 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 text-sm"
+                            onClick={cancelEditComment}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      // Comment Display
+                      <>
+                        <div className="flex justify-between items-center mb-1">
+                          <p className="font-medium">{comment.username || "Anonymous"}</p>
+                          <div className="flex items-center">
+                            <span className="text-gray-500 text-sm mr-4">
+                              {new Date(comment.created_at).toLocaleString()}
+                            </span>
+                            {isOwner(comment.user_id) && (
+                              <div className="flex space-x-1">
+                                <button
+                                  className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
+                                  onClick={() => startEditComment(comment)}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
+                                  onClick={() => deleteComment(post._id, comment._id)}
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <p>{comment.comment_text}</p>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
