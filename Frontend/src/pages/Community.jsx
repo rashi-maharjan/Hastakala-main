@@ -6,6 +6,7 @@ const Community = () => {
   const [newPostTitle, setNewPostTitle] = useState('');
   const [newPostContent, setNewPostContent] = useState('');
   const [newComment, setNewComment] = useState('');
+  const [commentPostId, setCommentPostId] = useState(null);
   const [editingPost, setEditingPost] = useState(null);
   const [editingComment, setEditingComment] = useState(null);
   const [editPostTitle, setEditPostTitle] = useState('');
@@ -14,6 +15,7 @@ const Community = () => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -116,6 +118,7 @@ const Community = () => {
       
       setNewPostTitle('');
       setNewPostContent('');
+      setShowCreateForm(false);
       fetchPosts();
     } catch (error) {
       console.error('Error creating post:', error);
@@ -151,6 +154,7 @@ const Community = () => {
       });
       
       setNewComment('');
+      setCommentPostId(null);
       fetchPosts();
     } catch (error) {
       console.error('Error creating comment:', error);
@@ -332,201 +336,341 @@ const Community = () => {
     );
   }
 
+  const getInitials = (name) => {
+    if (!name) return "A";
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  };
+
+  // Generate a color based on username for avatar
+  const getAvatarColor = (username) => {
+    if (!username) return "#6366F1"; // Default indigo
+    
+    const colors = [
+      "#F87171", // red
+      "#FB923C", // orange
+      "#FBBF24", // amber
+      "#34D399", // emerald
+      "#60A5FA", // blue
+      "#A78BFA", // violet
+      "#F472B6", // pink
+    ];
+    
+    // Simple hash function to pick a color based on username
+    let hash = 0;
+    for (let i = 0; i < username.length; i++) {
+      hash = username.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    return colors[Math.abs(hash) % colors.length];
+  };
+
   return (
-    <div className="max-w-4xl mx-auto p-4">
-      {/* Login status */}
-      <h1 className='text-4xl mb-5'>Community Posts</h1>
+    <div className="max-w-3xl mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Community</h1>
+        {isAuthenticated && (
+          <button
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-full"
+            onClick={() => setShowCreateForm(true)}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+            </svg>
+            Create Post
+          </button>
+        )}
+      </div>
 
       {/* New Post Form */}
-      <form onSubmit={handlePostSubmit} className="mb-6">
-        <input
-          type="text"
-          className="w-full p-2 border border-gray-300 rounded mb-2"
-          placeholder="Post Title"
-          value={newPostTitle}
-          onChange={(e) => setNewPostTitle(e.target.value)}
-          required
-          disabled={!isAuthenticated}
-        />
-        <textarea
-          className="w-full p-2 border border-gray-300 rounded mb-2"
-          placeholder={isAuthenticated ? "Write something..." : "Please log in to create a post"}
-          value={newPostContent}
-          onChange={(e) => setNewPostContent(e.target.value)}
-          required
-          disabled={!isAuthenticated}
-        ></textarea>
-        <button 
-          type="submit" 
-          className={`px-4 py-2 ${isAuthenticated ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-400'} text-white rounded`}
-          disabled={!isAuthenticated}
-        >
-          Create Post
-        </button>
-      </form>
+      {showCreateForm && isAuthenticated && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-md p-6 max-w-2xl w-full mx-4 relative">
+            <button 
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+              onClick={() => {
+                setShowCreateForm(false);
+                setNewPostTitle('');
+                setNewPostContent('');
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <h2 className="text-xl font-bold mb-4">Create New Post</h2>
+            <form onSubmit={(e) => {
+              handlePostSubmit(e);
+              setShowCreateForm(false);
+            }}>
+              <input
+                type="text"
+                className="w-full p-3 border border-gray-200 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Post Title"
+                value={newPostTitle}
+                onChange={(e) => setNewPostTitle(e.target.value)}
+                required
+                autoFocus
+              />
+              <textarea
+                className="w-full p-3 border border-gray-200 rounded-lg mb-4 min-h-[150px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Write something..."
+                value={newPostContent}
+                onChange={(e) => setNewPostContent(e.target.value)}
+                required
+              ></textarea>
+              <div className="flex justify-end gap-3">
+                <button 
+                  type="button"
+                  className="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-full"
+                  onClick={() => {
+                    setShowCreateForm(false);
+                    setNewPostTitle('');
+                    setNewPostContent('');
+                  }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-full"
+                >
+                  Post
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Community Posts */}
       {posts.length > 0 ? (
-        posts.map((post) => (
-          <div key={post._id} className="mb-6 p-4 border rounded-lg shadow-md">
-            {editingPost === post._id ? (
-              // Edit Post Form
-              <div className="mb-4">
-                <input
-                  type="text"
-                  className="w-full p-2 border border-gray-300 rounded mb-2"
-                  value={editPostTitle}
-                  onChange={(e) => setEditPostTitle(e.target.value)}
-                  required
-                />
-                <textarea
-                  className="w-full p-2 border border-gray-300 rounded mb-2"
-                  value={editPostContent}
-                  onChange={(e) => setEditPostContent(e.target.value)}
-                  required
-                ></textarea>
-                <div className="flex space-x-2">
-                  <button
-                    className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-                    onClick={() => saveEditedPost(post._id)}
-                  >
-                    Save
-                  </button>
-                  <button
-                    className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-                    onClick={cancelEditPost}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              // Post Display
-              <>
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h2 className="text-xl font-semibold">{post.title}</h2>
-                    <p className="text-sm text-gray-600">Posted by: {post.username || "Anonymous"}</p>
+        <div className="space-y-6">
+          {posts.map((post) => (
+            <div key={post._id} className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+              {editingPost === post._id ? (
+                // Edit Post Form
+                <div className="p-6">
+                  <input
+                    type="text"
+                    className="w-full p-3 border border-gray-200 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={editPostTitle}
+                    onChange={(e) => setEditPostTitle(e.target.value)}
+                    required
+                  />
+                  <textarea
+                    className="w-full p-3 border border-gray-200 rounded-lg mb-4 min-h-[120px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={editPostContent}
+                    onChange={(e) => setEditPostContent(e.target.value)}
+                    required
+                  ></textarea>
+                  <div className="flex space-x-2 justify-end">
+                    <button
+                      className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
+                      onClick={cancelEditPost}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      onClick={() => saveEditedPost(post._id)}
+                    >
+                      Save
+                    </button>
                   </div>
-                  <div className="flex items-center">
-                    <div className="text-gray-500 text-sm mr-4">{new Date(post.created_at).toLocaleString()}</div>
-                    {isOwner(post.user_id) && (
-                      <div className="flex space-x-1">
-                        <button
-                          className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
-                          onClick={() => startEditPost(post)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-                          onClick={() => deletePost(post._id)}
-                        >
-                          Delete
-                        </button>
+                </div>
+              ) : (
+                // Post Display
+                <>
+                  <div className="p-6">
+                    {/* Post Header */}
+                    <div className="flex items-center mb-4">
+                      <div 
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium mr-3"
+                        style={{ backgroundColor: getAvatarColor(post.username) }}
+                      >
+                        {getInitials(post.username)}
                       </div>
-                    )}
-                  </div>
-                </div>
-                <p className="text-gray-800 mb-3">{post.content}</p>
-              </>
-            )}
-            <div className="flex items-center space-x-4 mb-3">
-              <button
-                className={`px-4 py-2 ${isAuthenticated ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400'} text-white rounded`}
-                onClick={() => handleLike(post._id)}
-                disabled={!isAuthenticated}
-              >
-                Like ({post.likes_count})
-              </button>
-              <span className="text-gray-600">Comments ({post.comments_count || 0})</span>
-            </div>
-            
-            {/* Comment Form */}
-            <div className="mb-4">
-              <textarea
-                className="w-full p-2 border border-gray-300 rounded mb-2"
-                placeholder={isAuthenticated ? "Add a comment..." : "Please log in to comment"}
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                disabled={!isAuthenticated}
-              ></textarea>
-              <button
-                className={`px-4 py-2 ${isAuthenticated ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-400'} text-white rounded`}
-                onClick={() => handleCommentSubmit(post._id)}
-                disabled={!isAuthenticated || !newComment.trim()}
-              >
-                Post Comment
-              </button>
-            </div>
-            
-            {/* Comments List */}
-            {post.comments && post.comments.length > 0 && (
-              <div className="space-y-4">
-                {post.comments.map((comment) => (
-                  <div key={comment._id} className="p-4 border-t">
-                    {editingComment === comment._id ? (
-                      // Edit Comment Form
-                      <div>
-                        <textarea
-                          className="w-full p-2 border border-gray-300 rounded mb-2"
-                          value={editCommentText}
-                          onChange={(e) => setEditCommentText(e.target.value)}
-                          required
-                        ></textarea>
-                        <div className="flex space-x-2">
-                          <button
-                            className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
-                            onClick={() => saveEditedComment(post._id, comment._id)}
-                          >
-                            Save
-                          </button>
-                          <button
-                            className="px-2 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 text-sm"
-                            onClick={cancelEditComment}
-                          >
-                            Cancel
-                          </button>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">{post.username || "Anonymous"}</p>
+                            <p className="text-xs text-gray-500">{new Date(post.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</p>
+                          </div>
+                          {isOwner(post.user_id) && (
+                            <div className="flex space-x-1">
+                              <button
+                                className="p-1 text-gray-500 hover:text-blue-600"
+                                onClick={() => startEditPost(post)}
+                                aria-label="Edit post"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+                              <button
+                                className="p-1 text-gray-500 hover:text-red-600"
+                                onClick={() => deletePost(post._id)}
+                                aria-label="Delete post"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    ) : (
-                      // Comment Display
-                      <>
-                        <div className="flex justify-between items-center mb-1">
-                          <p className="font-medium">{comment.username || "Anonymous"}</p>
-                          <div className="flex items-center">
-                            <span className="text-gray-500 text-sm mr-4">
-                              {new Date(comment.created_at).toLocaleString()}
-                            </span>
-                            {isOwner(comment.user_id) && (
-                              <div className="flex space-x-1">
+                    </div>
+                    
+                    {/* Post Content */}
+                    <h2 className="text-xl font-semibold mb-2">{post.title}</h2>
+                    <p className="text-gray-800 mb-4">{post.content}</p>
+                    
+                    {/* Post Actions */}
+                    <div className="flex items-center space-x-4 border-t border-gray-100 pt-4">
+                      <button
+                        className={`flex items-center text-gray-500 hover:text-blue-600 ${!isAuthenticated ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        onClick={() => handleLike(post._id)}
+                        disabled={!isAuthenticated}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                        {post.likes_count > 0 && <span>{post.likes_count}</span>}
+                      </button>
+                      
+                      <button
+                        className="flex items-center text-gray-500 hover:text-blue-600"
+                        onClick={() => document.getElementById(`comment-${post._id}`).focus()}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                        </svg>
+                        {post.comments_count > 0 && <span>{post.comments_count}</span>}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+              
+              {/* Comment Form */}
+              {!editingPost && isAuthenticated && (
+                <div className="px-6 py-4 border-t border-gray-100">
+                  <textarea
+                    id={`comment-${post._id}`}
+                    className="w-full p-3 border border-gray-200 rounded-lg mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Write a comment..."
+                    value={post._id === commentPostId ? newComment : ""}
+                    onChange={(e) => {
+                      setNewComment(e.target.value);
+                      setCommentPostId(post._id);
+                    }}
+                  ></textarea>
+                  <div className="flex justify-end">
+                    <button
+                      className="px-4 py-1.5 bg-blue-600 text-white rounded-full text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => handleCommentSubmit(post._id)}
+                      disabled={!newComment.trim() || commentPostId !== post._id}
+                    >
+                      Comment
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {/* Comments List */}
+              {!editingPost && post.comments && post.comments.length > 0 && (
+                <div className="bg-gray-50 px-6 py-4 border-t border-gray-100">
+                  <h3 className="font-medium text-gray-700 mb-3">Comments</h3>
+                  <div className="space-y-4">
+                    {post.comments.map((comment) => (
+                      <div key={comment._id} className="flex">
+                        <div 
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-white font-medium text-xs mr-3 flex-shrink-0 mt-1"
+                          style={{ backgroundColor: getAvatarColor(comment.username) }}
+                        >
+                          {getInitials(comment.username)}
+                        </div>
+                        <div className="flex-1">
+                          {editingComment === comment._id ? (
+                            // Edit Comment Form
+                            <div>
+                              <textarea
+                                className="w-full p-2.5 border border-gray-200 rounded-lg mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                value={editCommentText}
+                                onChange={(e) => setEditCommentText(e.target.value)}
+                                required
+                              ></textarea>
+                              <div className="flex space-x-2 justify-end">
                                 <button
-                                  className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
-                                  onClick={() => startEditComment(comment)}
+                                  className="px-3 py-1 bg-gray-200 text-gray-800 rounded text-sm hover:bg-gray-300"
+                                  onClick={cancelEditComment}
                                 >
-                                  Edit
+                                  Cancel
                                 </button>
                                 <button
-                                  className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
-                                  onClick={() => deleteComment(post._id, comment._id)}
+                                  className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                                  onClick={() => saveEditedComment(post._id, comment._id)}
                                 >
-                                  Delete
+                                  Save
                                 </button>
                               </div>
-                            )}
-                          </div>
+                            </div>
+                          ) : (
+                            // Comment Display
+                            <div>
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <p className="font-medium text-sm">{comment.username || "Anonymous"}</p>
+                                  <p className="text-xs text-gray-500">{new Date(comment.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</p>
+                                </div>
+                                {isOwner(comment.user_id) && (
+                                  <div className="flex space-x-1">
+                                    <button
+                                      className="p-1 text-gray-400 hover:text-blue-600"
+                                      onClick={() => startEditComment(comment)}
+                                      aria-label="Edit comment"
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                      </svg>
+                                    </button>
+                                    <button
+                                      className="p-1 text-gray-400 hover:text-red-600"
+                                      onClick={() => deleteComment(post._id, comment._id)}
+                                      aria-label="Delete comment"
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      </svg>
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                              <p className="text-sm mt-1">{comment.comment_text}</p>
+                            </div>
+                          )}
                         </div>
-                        <p>{comment.comment_text}</p>
-                      </>
-                    )}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ))
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       ) : (
-        <p className="text-center text-gray-500">No posts available</p>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-8 text-center">
+          <p className="text-gray-500">No posts available</p>
+          {isAuthenticated && (
+            <button
+              className="mt-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-full"
+              onClick={() => setShowCreateForm(true)}
+            >
+              Create the first post
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

@@ -1,22 +1,90 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import logo from "../assets/images/logo.png";
-import rashi from "../assets/images/rashi.png";
-import {Link, useLocation} from "react-router-dom"
+import defaultAvatar from "../assets/images/rashi.png"; // Keep as fallback
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 function Header() {
   const location = useLocation();
-
+  const navigate = useNavigate();
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    // Get user data from localStorage
+    const getUserData = () => {
+      try {
+        const userStr = localStorage.getItem('user');
+        const token = localStorage.getItem('token');
+        
+        if (userStr && token) {
+          const userData = JSON.parse(userStr);
+          setUser(userData);
+        }
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    getUserData();
+
+    // Add click outside listener to close dropdown
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    // Clear localStorage
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    
+    // Reset state
+    setUser(null);
+    setIsDropdownOpen(false);
+    
+    // Redirect to login page
+    navigate('/login');
+  };
 
   const toggleSidePanel = () => {
     setIsSidePanelOpen(!isSidePanelOpen);
+  };
+
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  // Get user profile image URL
+  const getProfileImageUrl = () => {
+    if (user && user.profileImage) {
+      // If the image path is relative (from our server)
+      if (user.profileImage.startsWith('/')) {
+        return `http://localhost:3001${user.profileImage}`;
+      }
+      // If it's already a full URL
+      return user.profileImage;
+    }
+    return defaultAvatar;
   };
 
   return (
     <header className="relative bg-white shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 md:h-20">
-          <Link to="#" className="flex-shrink-0">
+          <Link to="/feed" className="flex-shrink-0">
             <img src={logo} alt="Logo" className="h-8 w-auto" />
           </Link>
           <button
@@ -39,26 +107,25 @@ function Header() {
           </button>
 
           <nav className="hidden xl:flex space-x-8">
-      <Link 
-        to="/feed" 
-        className={`text-gray-900 hover:text-primary ${location.pathname === "/feed" ? "text-primary" : ""}`}
-      >
-        Feed
-      </Link>
-      <Link 
-        to="/community" 
-        className={`text-gray-900 hover:text-primary ${location.pathname === "/community" ? "text-primary" : ""}`}
-      >
-        Community
-      </Link>
-      <Link 
-        to="/events" 
-        className={`text-gray-900 hover:text-primary ${location.pathname === "/events" ? "text-primary" : ""}`}
-      >
-        Events
-      </Link>
-    </nav>
-
+            <Link 
+              to="/feed" 
+              className={`text-gray-900 hover:text-primary ${location.pathname === "/feed" ? "text-primary" : ""}`}
+            >
+              Feed
+            </Link>
+            <Link 
+              to="/community" 
+              className={`text-gray-900 hover:text-primary ${location.pathname === "/community" ? "text-primary" : ""}`}
+            >
+              Community
+            </Link>
+            <Link 
+              to="/events" 
+              className={`text-gray-900 hover:text-primary ${location.pathname === "/events" ? "text-primary" : ""}`}
+            >
+              Events
+            </Link>
+          </nav>
 
           <div className="hidden xl:block relative w-1/3">
             <input
@@ -148,13 +215,59 @@ function Header() {
                 />
               </svg>
             </Link>
-            <Link to="#" className="flex-shrink-0">
-              <img
-                src={rashi}
-                alt="User profile"
-                className="h-8 w-8 rounded-full"
-              />
-            </Link>
+            
+            {/* User Profile Image or Login Link */}
+            {!isLoading && (
+              user ? (
+                <div className="relative" ref={dropdownRef}>
+                  <button 
+                    className="flex-shrink-0 focus:outline-none rounded-full"
+                    onClick={toggleDropdown}
+                  >
+                    <img
+                      src={getProfileImageUrl()}
+                      alt={user.name || "User profile"}
+                      className="h-8 w-8 rounded-full object-cover"
+                    />
+                  </button>
+                  
+                  {/* Dropdown menu */}
+                  {isDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 ring-1 ring-black ring-opacity-5">
+                      <div className="px-4 py-2 text-sm text-gray-700 border-b">
+                        <div className="font-medium truncate">{user.name}</div>
+                        <div className="truncate text-gray-500">{user.email}</div>
+                      </div>
+                      <Link 
+                        to="/profile" 
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => setIsDropdownOpen(false)}
+                      >
+                        Profile
+                      </Link>
+                      <Link 
+                        to="/settings" 
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => setIsDropdownOpen(false)}
+                      >
+                        Settings
+                      </Link>
+                      <button 
+                        onClick={handleLogout}
+                        className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link to="/login" className="text-primary hover:text-primary-dark font-medium">
+                  Login
+                </Link>
+              )
+            )}
+            
             <Link to="#" className="text-gray-400 hover:text-gray-500">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -216,17 +329,25 @@ function Header() {
           </button>
 
           <div className="mt-8">
-            <div className="flex items-center mb-6">
-              <img
-                src={rashi}
-                alt="User profile"
-                className="h-10 w-10 rounded-full mr-3"
-              />
-            </div>
-            <p className="font-semibold">Rashi Maharjan</p>
-            <p className="text-sm text-gray-500 mb-6">
-              rashimaharjan03@gmail.com
-            </p>
+            {!isLoading && user ? (
+              <div className="flex items-center mb-6">
+                <img
+                  src={getProfileImageUrl()}
+                  alt={user.name || "User profile"}
+                  className="h-10 w-10 rounded-full object-cover mr-3"
+                />
+                <div>
+                  <p className="font-semibold">{user.name}</p>
+                  <p className="text-sm text-gray-500">{user.email}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="mb-6">
+                <Link to="/login" className="text-primary hover:text-primary-dark font-medium">
+                  Login
+                </Link>
+              </div>
+            )}
 
             <div className="mb-6">
               <input
@@ -237,37 +358,27 @@ function Header() {
             </div>
 
             <nav className="space-y-4">
-              <Link to="#" className="block text-gray-700 hover:text-gray-900">
-                Home
+              <Link 
+                to="/feed" 
+                className={`block ${location.pathname === "/feed" ? "text-primary" : "text-gray-700 hover:text-gray-900"}`}
+                onClick={() => setIsSidePanelOpen(false)}
+              >
+                Feed
               </Link>
-              <Link
-                to="#"
-                className="block text-primary hover:text-primary-dark"
+              <Link 
+                to="/community" 
+                className={`block ${location.pathname === "/community" ? "text-primary" : "text-gray-700 hover:text-gray-900"}`}
+                onClick={() => setIsSidePanelOpen(false)}
               >
                 Community
               </Link>
-              <Link to="#" className="block text-gray-700 hover:text-gray-900">
+              <Link 
+                to="/events" 
+                className={`block ${location.pathname === "/events" ? "text-primary" : "text-gray-700 hover:text-gray-900"}`}
+                onClick={() => setIsSidePanelOpen(false)}
+              >
                 Events
               </Link>
-              <button className="flex items-center text-gray-700 hover:text-gray-900 w-full">
-                Categories
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="22"
-                  height="24"
-                  viewBox="0 0 22 24"
-                  fill="none"
-                  className="ml-auto"
-                >
-                  <path
-                    d="M16.0416 9.25L10.9999 14.75L5.95825 9.25"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
             </nav>
 
             <div className="mt-6 pt-6 border-t border-gray-200">
@@ -330,6 +441,18 @@ function Header() {
                 </svg>
                 Cart
               </Link>
+              
+              {user && (
+                <button 
+                  onClick={handleLogout}
+                  className="flex items-center text-red-600 hover:text-red-700 mt-4"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  Logout
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/Users'); // Ensure correct model path
+const User = require('../models/Users');
 const router = express.Router();
 
 // Ensure JWT_SECRET is defined
@@ -30,11 +30,20 @@ router.post('/register', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, salt);
 
         // Create new user
-        user = new User({ name, email, password: hashedPassword, role: role || 'user' });
+        user = new User({ 
+            name, 
+            email, 
+            password: hashedPassword, 
+            role: role || 'normal_user',
+            profileImage: null // Initialize profile image as null
+        });
         await user.save();
         
         console.log("Registration successful for:", email);
-        res.status(201).json({ message: 'User registered successfully' });
+        res.status(201).json({ 
+            message: 'User registered successfully',
+            userId: user._id // Return the user ID for the frontend
+        });
     } catch (error) {
         console.error("Register Error:", error);
         res.status(500).json({ message: 'Server error', error: error.message });
@@ -80,12 +89,45 @@ router.post('/login', async (req, res) => {
                 id: user._id, 
                 name: user.name, 
                 email: user.email, 
-                role: user.role 
+                role: user.role,
+                profileImage: user.profileImage
             },
         });
     } catch (error) {
         console.error("Login Error:", error);
         res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+// Get user profile
+router.get('/profile', async (req, res) => {
+    const token = req.header('Authorization');
+    
+    if (!token) {
+        return res.status(401).json({ message: 'No token provided' });
+    }
+    
+    try {
+        const tokenToVerify = token.startsWith("Bearer ") ? token.slice(7) : token;
+        const decoded = jwt.verify(tokenToVerify, JWT_SECRET);
+        
+        const user = await User.findById(decoded.userId).select('-password');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        
+        res.status(200).json({ 
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                profileImage: user.profileImage
+            }
+        });
+    } catch (error) {
+        console.error("Profile fetch error:", error);
+        res.status(401).json({ message: 'Invalid token' });
     }
 });
 
