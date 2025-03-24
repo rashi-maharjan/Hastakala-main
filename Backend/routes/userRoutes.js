@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const mongoose = require('mongoose');
 const User = require('../models/Users');
 const { authenticateUser } = require('../middleware/authMiddleware');
 
@@ -146,4 +147,49 @@ router.get('/profile-image/:userId', async (req, res) => {
   }
 });
 
+router.post('/profiles', authenticateUser, async (req, res) => {
+    try {
+      const { userIds } = req.body;
+      
+      console.log('Backend: Received raw user IDs:', userIds);
+      
+      // Validate input
+      if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+        return res.status(400).json({ error: 'Invalid user IDs', receivedIds: userIds });
+      }
+      
+      // Convert all IDs to strings and filter out any invalid ones
+      const validUserIds = userIds
+        .map(id => typeof id === 'string' ? id : String(id))
+        .filter(id => mongoose.Types.ObjectId.isValid(id));
+      
+      console.log('Backend: Validated user IDs:', validUserIds);
+      
+      // Find users by their IDs and return relevant profile information
+      const userProfiles = await User.find({ 
+        _id: { $in: validUserIds }
+      }, 'id _id profileImage name email'); // Added more fields for debugging
+      
+      console.log('Backend: Found user profiles:', userProfiles.map(profile => ({
+        id: profile._id,
+        name: profile.name,
+        profileImage: profile.profileImage
+      })));
+      
+      // If no profiles found, log and return
+      if (userProfiles.length === 0) {
+        console.log('No user profiles found for given IDs');
+        return res.status(404).json({ error: 'No user profiles found', requestedIds: userIds });
+      }
+      
+      res.json(userProfiles);
+    } catch (error) {
+      console.error('Backend: Error fetching user profiles:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch user profiles', 
+        details: error.message 
+      });
+    }
+  });
+  
 module.exports = router;

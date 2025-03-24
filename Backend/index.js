@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const path = require('path'); // Add this for handling file paths
+const path = require('path');
 require('dotenv').config();
 const connectDB = require('./config/db');
 
@@ -19,21 +19,27 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json()); // Parse incoming JSON requests
+// Parse incoming JSON requests
+app.use(express.json());
 
 // Middleware for file uploads - serve static files from 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 // Routes
 const authRoutes = require('./routes/authRoute');
 const eventRoutes = require('./routes/eventRoute');
 const communityRoutes = require('./routes/communityRoute');
-const userRoutes = require('./routes/userRoutes'); // Add this line for the new user routes
+const userRoutes = require('./routes/userRoutes');
+const artworkRoutes = require('./routes/artworkRoutes'); // Import the new artwork routes
 
 app.use('/api/auth', authRoutes);
 app.use('/api', eventRoutes);
 app.use('/api', communityRoutes);
-app.use('/api/users', userRoutes); // Add this line to mount the user routes
+app.use('/api/users', userRoutes);
+app.use('/api/artwork', artworkRoutes); // Mount the artwork routes
 
 // Connect to the database
 connectDB();

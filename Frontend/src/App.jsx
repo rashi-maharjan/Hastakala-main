@@ -9,6 +9,7 @@ import Feed from "./pages/Feed";
 import Community from "./pages/Community";
 import AdminDashboard from "./pages/AdminDashboard";
 import ArtistDashboard from "./pages/ArtistDashboard";
+import AddArtwork from "./components/AddArtwork";
 
 function App() {
   return (
@@ -17,20 +18,23 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         
-        {/* Protected Routes */}
+        {/* Admin Protected Routes */}
         <Route element={<ProtectedRoute role="admin" />}>
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/admin-dashboard/events" element={<EventAdmin />} />
         </Route>
 
+        {/* Artist Protected Routes - Only specific artist functionality */}
         <Route element={<ProtectedRoute role="artist" />}>
           <Route path="/artist-dashboard" element={<ArtistDashboard />} />
+          <Route path="/add-artwork" element={<AddArtwork />} />
         </Route>
 
+        {/* General Protected Routes - Available to all logged-in users */}
         <Route element={<ProtectedRoute />}>
           <Route path="/feed" element={<Feed />} />
           <Route path="/events" element={<Events />} />
-          <Route path="/community" element={<Community />} /> {/* New Route for Individual Post */}
+          <Route path="/community" element={<Community />} />
         </Route>
 
         <Route path="/" element={<Home />} />

@@ -30,7 +30,7 @@ const Login = () => {
           navigate("/admin-dashboard");
           break;
         case "artist":
-          navigate("/artist-dashboard");
+          navigate("/feed");
           break;
         default:
           navigate("/feed");
