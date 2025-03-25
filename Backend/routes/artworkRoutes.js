@@ -33,14 +33,35 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Initialize multer
+// Initialize multer with increased file size limit
 const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB max file size
+    fileSize: 10 * 1024 * 1024 // Increased to 10MB max file size
   }
 });
+
+// Custom error handler for multer
+const uploadMiddleware = (req, res, next) => {
+  const uploadHandler = upload.single('image');
+  
+  uploadHandler(req, res, function(err) {
+    if (err) {
+      console.error('Multer error:', err);
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ 
+            error: 'File too large. Maximum file size is 10MB.' 
+          });
+        }
+        return res.status(400).json({ error: `Upload error: ${err.message}` });
+      }
+      return res.status(400).json({ error: err.message });
+    }
+    next();
+  });
+};
 
 // Middleware to check if user is an artist
 const isArtist = (req, res, next) => {
@@ -63,19 +84,47 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Get artwork by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const artwork = await Artwork.findById(req.params.id)
+      .populate('artist', 'name profileImage');
+    
+    if (!artwork) {
+      return res.status(404).json({ error: 'Artwork not found' });
+    }
+    
+    res.status(200).json(artwork);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Add new artwork (artist only)
 router.post(
   '/', 
   authenticateUser, 
   isArtist, 
-  upload.single('image'), 
+  uploadMiddleware, // Use custom middleware to handle multer errors
   async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: 'No artwork image uploaded' });
       }
 
-      const { title, price } = req.body;
+      const { 
+        title, 
+        price, 
+        inStock, 
+        height, 
+        width, 
+        medium, 
+        paper, 
+        orientation, 
+        frame, 
+        description 
+      } = req.body;
+      
       if (!title || !price) {
         // Delete uploaded file if request data is incomplete
         fs.unlinkSync(path.join(uploadDir, req.file.filename));
@@ -89,7 +138,15 @@ router.post(
         title,
         price,
         imageUrl,
-        artist: req.user.userId
+        artist: req.user.userId,
+        inStock: inStock === 'true' || inStock === true,
+        height,
+        width,
+        medium,
+        paper,
+        orientation,
+        frame,
+        description
       });
 
       await newArtwork.save();
@@ -110,6 +167,71 @@ router.post(
         fs.unlinkSync(path.join(uploadDir, req.file.filename));
       }
       
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// Update artwork (artist only can update their own artworks)
+router.put(
+  '/:id',
+  authenticateUser,
+  async (req, res) => {
+    try {
+      const artwork = await Artwork.findById(req.params.id);
+      
+      if (!artwork) {
+        return res.status(404).json({ error: 'Artwork not found' });
+      }
+      
+      // Check if user is the artist or an admin
+      if (
+        artwork.artist.toString() !== req.user.userId && 
+        req.user.role !== 'admin'
+      ) {
+        return res.status(403).json({ 
+          error: 'Access denied. You can only update your own artwork.' 
+        });
+      }
+      
+      // Fields that can be updated
+      const { 
+        title, 
+        price, 
+        inStock, 
+        height, 
+        width, 
+        medium, 
+        paper, 
+        orientation, 
+        frame, 
+        description 
+      } = req.body;
+      
+      // Update allowed fields
+      if (title) artwork.title = title;
+      if (price) artwork.price = price;
+      if (inStock !== undefined) artwork.inStock = inStock === 'true' || inStock === true;
+      if (height) artwork.height = height;
+      if (width) artwork.width = width;
+      if (medium) artwork.medium = medium;
+      if (paper) artwork.paper = paper;
+      if (orientation) artwork.orientation = orientation;
+      if (frame) artwork.frame = frame;
+      if (description) artwork.description = description;
+      
+      await artwork.save();
+      
+      // Populate artist info for response
+      const updatedArtwork = await Artwork.findById(artwork._id)
+        .populate('artist', 'name profileImage');
+      
+      res.status(200).json({
+        message: 'Artwork updated successfully',
+        artwork: updatedArtwork
+      });
+    } catch (error) {
+      console.error('Error updating artwork:', error);
       res.status(500).json({ error: error.message });
     }
   }

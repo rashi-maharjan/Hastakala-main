@@ -9,6 +9,14 @@ const artworkSchema = new mongoose.Schema({
     ref: 'User', 
     required: true 
   },
+  inStock: { type: Boolean, default: true },
+  height: { type: String },
+  width: { type: String },
+  medium: { type: String },
+  paper: { type: String },
+  orientation: { type: String },
+  frame: { type: String, default: 'Not Included' },
+  description: { type: String },
   createdAt: { 
     type: Date, 
     default: Date.now 
