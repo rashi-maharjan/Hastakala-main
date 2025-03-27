@@ -9,6 +9,7 @@ function Header() {
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [userRole, setUserRole] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const dropdownRef = useRef(null);
 
@@ -18,10 +19,12 @@ function Header() {
       try {
         const userStr = localStorage.getItem('user');
         const token = localStorage.getItem('token');
+        const role = localStorage.getItem('role');
         
         if (userStr && token) {
           const userData = JSON.parse(userStr);
           setUser(userData);
+          setUserRole(role);
         }
       } catch (error) {
         console.error('Error parsing user data:', error);
@@ -53,6 +56,7 @@ function Header() {
     
     // Reset state
     setUser(null);
+    setUserRole(null);
     setIsDropdownOpen(false);
     
     // Redirect to login page
@@ -125,6 +129,15 @@ function Header() {
             >
               Events
             </Link>
+            {/* Show Manage Artwork link only for artists */}
+            {userRole === 'artist' && (
+              <Link 
+                to="/manage-artwork" 
+                className={`text-gray-900 hover:text-primary ${location.pathname === "/manage-artwork" ? "text-primary" : ""}`}
+              >
+                Manage Artwork
+              </Link>
+            )}
           </nav>
 
           <div className="hidden xl:block relative w-1/3">
@@ -245,6 +258,15 @@ function Header() {
                       >
                         Profile
                       </Link>
+                      {userRole === 'artist' && (
+                        <Link 
+                          to="/manage-artwork" 
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsDropdownOpen(false)}
+                        >
+                          Manage Artwork
+                        </Link>
+                      )}
                       <Link 
                         to="/settings" 
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -379,6 +401,16 @@ function Header() {
               >
                 Events
               </Link>
+              {/* Show Manage Artwork link only for artists in mobile menu too */}
+              {userRole === 'artist' && (
+                <Link 
+                  to="/manage-artwork" 
+                  className={`block ${location.pathname === "/manage-artwork" ? "text-primary" : "text-gray-700 hover:text-gray-900"}`}
+                  onClick={() => setIsSidePanelOpen(false)}
+                >
+                  Manage Artwork
+                </Link>
+              )}
             </nav>
 
             <div className="mt-6 pt-6 border-t border-gray-200">

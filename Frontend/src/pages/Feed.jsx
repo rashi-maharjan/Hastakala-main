@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // Import for navigation
 import Header from "../components/Header";
 import axios from 'axios';
 import AddArtwork from '../components/AddArtwork';
@@ -19,6 +20,7 @@ import sop from '../assets/images/Sophisticated Nature.png'
 const API_URL = 'http://localhost:3001';
 
 const Feed = () => {
+  const navigate = useNavigate(); // Hook for navigation
   const [artworks, setArtworks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -29,16 +31,16 @@ const Feed = () => {
 
   // Fallback artworks data in case API fails
   const fallbackArtworks = [
-    { title: "Peace and Harmony", price: "Rs. 30,000", image: peace },
-    { title: "Living Goddess", price: "Rs. 50,000", image: living },
-    { title: "Holy Seto Machhindranath", price: "Rs. 40,000", image: seto },
-    { title: "Millions of Dots", price: "Rs. 2,000", image: millions},
-    { title: "Ganesh of Navadurga Nach", price: "Rs. 10,000", image: ganesh },
-    { title: "Culture behind the Mask", price: "Rs. 60,000", image: culture },
-    { title: "Shree Pachali Bhairav", price: "Rs. 80,000", image: shree },
-    { title: "Gufa", price: "Rs. 10,000", image: gufa },
-    { title: "Green Tara", price: "Rs. 2,000", image: green },
-    { title: "Sophisticated Nature", price: "Rs. 1,000", image: sop },
+    { title: "Peace and Harmony", price: "Rs. 30,000", image: peace, _id: "fallback1" },
+    { title: "Living Goddess", price: "Rs. 50,000", image: living, _id: "fallback2" },
+    { title: "Holy Seto Machhindranath", price: "Rs. 40,000", image: seto, _id: "fallback3" },
+    { title: "Millions of Dots", price: "Rs. 2,000", image: millions, _id: "fallback4" },
+    { title: "Ganesh of Navadurga Nach", price: "Rs. 10,000", image: ganesh, _id: "fallback5" },
+    { title: "Culture behind the Mask", price: "Rs. 60,000", image: culture, _id: "fallback6" },
+    { title: "Shree Pachali Bhairav", price: "Rs. 80,000", image: shree, _id: "fallback7" },
+    { title: "Gufa", price: "Rs. 10,000", image: gufa, _id: "fallback8" },
+    { title: "Green Tara", price: "Rs. 2,000", image: green, _id: "fallback9" },
+    { title: "Sophisticated Nature", price: "Rs. 1,000", image: sop, _id: "fallback10" },
   ];
 
   // Helper function to format image URLs
@@ -60,6 +62,12 @@ const Feed = () => {
     
     // Fallback to a placeholder
     return 'https://via.placeholder.com/300';
+  };
+
+  // Handle navigation to artwork details
+  const handleArtworkClick = (artwork) => {
+    const artworkId = artwork._id || `fallback-${artwork.title.replace(/\s+/g, '-').toLowerCase()}`;
+    navigate(`/artwork/${artworkId}`, { state: { artwork } });
   };
 
   useEffect(() => {
@@ -162,7 +170,11 @@ const Feed = () => {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
             {artworks.map((artwork, index) => (
-              <div key={artwork._id || index} className="artwork-card">
+              <div 
+                key={artwork._id || index} 
+                className="artwork-card cursor-pointer hover:shadow-lg transition-shadow duration-300"
+                onClick={() => handleArtworkClick(artwork)}
+              >
                 <div className="aspect-[3/4] rounded-lg overflow-hidden">
                   <img
                     src={getImageUrl(artwork)}

@@ -10,6 +10,8 @@ import Community from "./pages/Community";
 import AdminDashboard from "./pages/AdminDashboard";
 import ArtistDashboard from "./pages/ArtistDashboard";
 import AddArtwork from "./components/AddArtwork";
+import ArtworkDetail from "./pages/ArtworkDetail";
+import ManageArtwork from "./pages/ManageArtwork"; // Import the new ManageArtwork component
 
 function App() {
   return (
@@ -28,11 +30,13 @@ function App() {
         <Route element={<ProtectedRoute role="artist" />}>
           <Route path="/artist-dashboard" element={<ArtistDashboard />} />
           <Route path="/add-artwork" element={<AddArtwork />} />
+          <Route path="/manage-artwork" element={<ManageArtwork />} /> {/* Add the ManageArtwork route */}
         </Route>
 
         {/* General Protected Routes - Available to all logged-in users */}
         <Route element={<ProtectedRoute />}>
           <Route path="/feed" element={<Feed />} />
+          <Route path="/artwork/:id" element={<ArtworkDetail />} />
           <Route path="/events" element={<Events />} />
           <Route path="/community" element={<Community />} />
         </Route>
