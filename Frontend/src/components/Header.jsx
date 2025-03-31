@@ -11,6 +11,7 @@ function Header() {
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [cartItemsCount, setCartItemsCount] = useState(0);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -35,6 +36,24 @@ function Header() {
 
     getUserData();
 
+    // Load cart items count from localStorage
+    const getCartItems = () => {
+      try {
+        const cartItems = localStorage.getItem('cartItems');
+        if (cartItems) {
+          const items = JSON.parse(cartItems);
+          setCartItemsCount(items.length);
+        } else {
+          setCartItemsCount(0);
+        }
+      } catch (error) {
+        console.error('Error loading cart items:', error);
+        setCartItemsCount(0);
+      }
+    };
+
+    getCartItems();
+
     // Add click outside listener to close dropdown
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -43,8 +62,17 @@ function Header() {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
+    
+    // Listen for cart updates
+    const handleCartUpdate = () => {
+      getCartItems();
+    };
+    
+    window.addEventListener("cartUpdated", handleCartUpdate);
+    
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("cartUpdated", handleCartUpdate);
     };
   }, []);
 
@@ -203,7 +231,7 @@ function Header() {
                 />
               </svg>
             </Link>
-            <Link to="#" className="text-gray-400 hover:text-gray-500">
+            <Link to="/cart" className="text-gray-400 hover:text-gray-500 relative">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
@@ -227,6 +255,11 @@ function Header() {
                   strokeLinejoin="round"
                 />
               </svg>
+              {cartItemsCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {cartItemsCount}
+                </span>
+              )}
             </Link>
             
             {/* User Profile Image or Login Link */}
@@ -444,8 +477,9 @@ function Header() {
                 Notifications
               </Link>
               <Link
-                to="#"
-                className="flex items-center text-gray-700 hover:text-gray-900"
+                to="/cart"
+                className="flex items-center text-gray-700 hover:text-gray-900 relative"
+                onClick={() => setIsSidePanelOpen(false)}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -472,6 +506,11 @@ function Header() {
                   />
                 </svg>
                 Cart
+                {cartItemsCount > 0 && (
+                  <span className="ml-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {cartItemsCount}
+                  </span>
+                )}
               </Link>
               
               {user && (

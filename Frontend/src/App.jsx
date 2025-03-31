@@ -11,7 +11,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import ArtistDashboard from "./pages/ArtistDashboard";
 import AddArtwork from "./components/AddArtwork";
 import ArtworkDetail from "./pages/ArtworkDetail";
-import ManageArtwork from "./pages/ManageArtwork"; // Import the new ManageArtwork component
+import ManageArtwork from "./pages/ManageArtwork";
+import Cart from "./pages/Cart"; // Import the Cart component
 
 function App() {
   return (
@@ -30,7 +31,7 @@ function App() {
         <Route element={<ProtectedRoute role="artist" />}>
           <Route path="/artist-dashboard" element={<ArtistDashboard />} />
           <Route path="/add-artwork" element={<AddArtwork />} />
-          <Route path="/manage-artwork" element={<ManageArtwork />} /> {/* Add the ManageArtwork route */}
+          <Route path="/manage-artwork" element={<ManageArtwork />} />
         </Route>
 
         {/* General Protected Routes - Available to all logged-in users */}
@@ -41,6 +42,8 @@ function App() {
           <Route path="/community" element={<Community />} />
         </Route>
 
+        {/* Public Routes */}
+        <Route path="/cart" element={<Cart />} />
         <Route path="/" element={<Home />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Header from "../components/Header";
+import { addToCart } from '../utils/CartUtils'; // Import cart utility function
 
 // Backend URL
 const API_URL = 'http://localhost:3001';
@@ -13,6 +14,7 @@ const ArtworkDetail = () => {
   const [artwork, setArtwork] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [addedToCart, setAddedToCart] = useState(false);
 
   // Check if artwork was passed via location state
   const passedArtwork = location.state?.artwork;
@@ -53,11 +55,6 @@ const ArtworkDetail = () => {
 
   // Helper function to format image URL
   const getImageUrl = (artwork) => {
-    // If it's a local image (from fallback)
-    if (artwork.image) {
-      return artwork.image;
-    }
-    
     // If it's an API image with relative path
     if (artwork.imageUrl && artwork.imageUrl.startsWith('/')) {
       return `${API_URL}${artwork.imageUrl}`;
@@ -68,6 +65,11 @@ const ArtworkDetail = () => {
       return artwork.imageUrl;
     }
     
+    // If it's a local image (from fallback)
+    if (artwork.image) {
+      return artwork.image;
+    }
+    
     // Fallback to a placeholder
     return 'https://via.placeholder.com/300';
   };
@@ -76,8 +78,20 @@ const ArtworkDetail = () => {
     navigate(-1); // Go back to the previous page
   };
 
+  const handleAddToCart = () => {
+    if (artwork) {
+      addToCart(artwork);
+      setAddedToCart(true);
+      
+      // Reset "Added to Cart" message after 3 seconds
+      setTimeout(() => {
+        setAddedToCart(false);
+      }, 3000);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <Header />
 
       <main className="container mx-auto px-4 py-8">
@@ -106,7 +120,7 @@ const ArtworkDetail = () => {
             </button>
           </div>
         ) : artwork ? (
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden max-w-6xl mx-auto">
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden max-w-6xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
               {/* Artwork Image */}
               <div className="h-full">
@@ -214,9 +228,21 @@ const ArtworkDetail = () => {
                 )}
 
                 {/* Add to Cart button */}
-                <button className="w-full bg-red-600 text-white py-3 px-6 rounded-lg hover:bg-red-700 transition-colors focus:outline-none">
-                  Add to Cart
-                </button>
+                <div className="flex flex-col space-y-2">
+                  <button 
+                    onClick={handleAddToCart}
+                    className="w-full bg-red-600 text-white py-3 px-6 rounded-lg hover:bg-red-700 transition-colors focus:outline-none"
+                    disabled={addedToCart}
+                  >
+                    {addedToCart ? 'Added to Cart!' : 'Add to Cart'}
+                  </button>
+                  
+                  {addedToCart && (
+                    <div className="text-green-600 text-center">
+                      Item added to your cart successfully!
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
