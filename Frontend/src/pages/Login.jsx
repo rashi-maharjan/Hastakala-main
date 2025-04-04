@@ -3,6 +3,11 @@ import logo from "../assets/images/logo.png";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 
+// Helper to get a user-specific cart key
+const getCartKey = (userId) => {
+  return `cartItems_${userId || 'guest'}`;
+};
+
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,6 +20,10 @@ const Login = () => {
       const response = await axios.post("http://localhost:3001/api/auth/login", { email, password });
       const { token, user } = response.data;
   
+      // Clear any existing guest cart or previous user's cart
+      const guestCartKey = getCartKey('guest');
+      localStorage.removeItem(guestCartKey);
+      
       // Store token and role as before
       localStorage.setItem("token", token);
       localStorage.setItem("role", user.role);
@@ -23,6 +32,15 @@ const Login = () => {
       localStorage.setItem("user", JSON.stringify(user));
       
       console.log("User data saved to localStorage:", user);
+      
+      // Create a user-specific cart if it doesn't exist
+      const userCartKey = getCartKey(user.id || user._id);
+      if (!localStorage.getItem(userCartKey)) {
+        localStorage.setItem(userCartKey, JSON.stringify([]));
+      }
+      
+      // Notify components that cart data may have changed
+      window.dispatchEvent(new Event('cartUpdated'));
   
       // Continue with navigation based on role
       switch (user.role) {

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import logo from "../assets/images/logo.png";
 import defaultAvatar from "../assets/images/rashi.png"; // Keep as fallback
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { getCartItemsCount, handleAuthChange } from "../utils/CartUtils"; // Import auth change handler
 
 function Header() {
   const location = useLocation();
@@ -13,6 +14,8 @@ function Header() {
   const [isLoading, setIsLoading] = useState(true);
   const [cartItemsCount, setCartItemsCount] = useState(0);
   const dropdownRef = useRef(null);
+
+  // These functions can be removed as we're now handling this logic inline in handleLogout
 
   useEffect(() => {
     // Get user data from localStorage
@@ -26,33 +29,24 @@ function Header() {
           const userData = JSON.parse(userStr);
           setUser(userData);
           setUserRole(role);
+        } else {
+          setUser(null);
+          setUserRole(null);
         }
       } catch (error) {
         console.error('Error parsing user data:', error);
+        setUser(null);
+        setUserRole(null);
       } finally {
         setIsLoading(false);
       }
     };
 
     getUserData();
+    handleAuthChange(); // Update cart when auth state changes
 
-    // Load cart items count from localStorage
-    const getCartItems = () => {
-      try {
-        const cartItems = localStorage.getItem('cartItems');
-        if (cartItems) {
-          const items = JSON.parse(cartItems);
-          setCartItemsCount(items.length);
-        } else {
-          setCartItemsCount(0);
-        }
-      } catch (error) {
-        console.error('Error loading cart items:', error);
-        setCartItemsCount(0);
-      }
-    };
-
-    getCartItems();
+    // Load cart items count for the current user
+    updateCartCount();
 
     // Add click outside listener to close dropdown
     const handleClickOutside = (event) => {
@@ -65,7 +59,7 @@ function Header() {
     
     // Listen for cart updates
     const handleCartUpdate = () => {
-      getCartItems();
+      updateCartCount();
     };
     
     window.addEventListener("cartUpdated", handleCartUpdate);
@@ -76,8 +70,30 @@ function Header() {
     };
   }, []);
 
+  // Update cart count from localStorage
+  const updateCartCount = () => {
+    const count = getCartItemsCount();
+    setCartItemsCount(count);
+  };
+
   const handleLogout = () => {
-    // Clear localStorage
+    // Get the current user ID directly
+    let userId = 'guest';
+    try {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const userData = JSON.parse(userStr);
+        userId = userData.id || 'guest';
+      }
+    } catch (error) {
+      console.error('Error getting user ID:', error);
+    }
+    
+    // Create cart keys inline
+    const userCartKey = `cart_${userId}`;
+    const guestCartKey = `cart_guest`;
+    
+    // Clear user authentication data
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     localStorage.removeItem('role');
@@ -86,6 +102,15 @@ function Header() {
     setUser(null);
     setUserRole(null);
     setIsDropdownOpen(false);
+    
+    // Initialize guest cart if needed
+    if (!localStorage.getItem(guestCartKey)) {
+      localStorage.setItem(guestCartKey, JSON.stringify([]));
+    }
+    
+    // Notify components that cart data has changed
+    setCartItemsCount(0);
+    window.dispatchEvent(new Event('cartUpdated'));
     
     // Redirect to login page
     navigate('/login');
