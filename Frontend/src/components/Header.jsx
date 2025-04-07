@@ -3,6 +3,7 @@ import logo from "../assets/images/logo.png";
 import defaultAvatar from "../assets/images/rashi.png"; // Keep as fallback
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { getCartItemsCount, handleAuthChange } from "../utils/CartUtils"; // Import auth change handler
+import axios from "axios"; // Add axios import
 
 function Header() {
   const location = useLocation();
@@ -13,6 +14,7 @@ function Header() {
   const [userRole, setUserRole] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [cartItemsCount, setCartItemsCount] = useState(0);
+  const [notificationCount, setNotificationCount] = useState(0); // Add notification count state
   const dropdownRef = useRef(null);
 
   // These functions can be removed as we're now handling this logic inline in handleLogout
@@ -29,9 +31,12 @@ function Header() {
           const userData = JSON.parse(userStr);
           setUser(userData);
           setUserRole(role);
+          // Fetch notification count when user is logged in
+          fetchNotificationCount(token);
         } else {
           setUser(null);
           setUserRole(null);
+          setNotificationCount(0);
         }
       } catch (error) {
         console.error('Error parsing user data:', error);
@@ -64,11 +69,45 @@ function Header() {
     
     window.addEventListener("cartUpdated", handleCartUpdate);
     
+    // Listen for notification updates
+    const handleNotificationUpdate = () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        fetchNotificationCount(token);
+      }
+    };
+    
+    window.addEventListener("notificationUpdated", handleNotificationUpdate);
+    
+    // Set up polling for notifications (every 30 seconds)
+    const notificationPoll = setInterval(() => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        fetchNotificationCount(token);
+      }
+    }, 30000);
+    
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       window.removeEventListener("cartUpdated", handleCartUpdate);
+      window.removeEventListener("notificationUpdated", handleNotificationUpdate);
+      clearInterval(notificationPoll);
     };
   }, []);
+
+  // Fetch notification count from the API
+  const fetchNotificationCount = async (token) => {
+    try {
+      const response = await axios.get('http://localhost:3001/api/notifications/unread-count', {
+        headers: {
+          Authorization: token
+        }
+      });
+      setNotificationCount(response.data.count);
+    } catch (error) {
+      console.error('Error fetching notification count:', error);
+    }
+  };
 
   // Update cart count from localStorage
   const updateCartCount = () => {
@@ -102,6 +141,7 @@ function Header() {
     setUser(null);
     setUserRole(null);
     setIsDropdownOpen(false);
+    setNotificationCount(0);
     
     // Initialize guest cart if needed
     if (!localStorage.getItem(guestCartKey)) {
@@ -225,7 +265,7 @@ function Header() {
           </div>
 
           <div className="hidden xl:flex items-center space-x-4">
-            <Link to="#" className="text-gray-400 hover:text-gray-500">
+            <Link to="/notifications" className="text-gray-400 hover:text-gray-500 relative">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
@@ -255,6 +295,11 @@ function Header() {
                   strokeLinejoin="round"
                 />
               </svg>
+              {notificationCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {notificationCount}
+                </span>
+              )}
             </Link>
             <Link to="/cart" className="text-gray-400 hover:text-gray-500 relative">
               <svg
@@ -473,8 +518,9 @@ function Header() {
 
             <div className="mt-6 pt-6 border-t border-gray-200">
               <Link
-                to="#"
+                to="/notifications"
                 className="flex items-center text-gray-700 hover:text-gray-900 mb-4"
+                onClick={() => setIsSidePanelOpen(false)}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -500,6 +546,11 @@ function Header() {
                   />
                 </svg>
                 Notifications
+                {notificationCount > 0 && (
+                  <span className="ml-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {notificationCount}
+                  </span>
+                )}
               </Link>
               <Link
                 to="/cart"
@@ -539,16 +590,27 @@ function Header() {
               </Link>
               
               {user && (
-                <button 
-                  onClick={handleLogout}
-                  className="flex items-center text-red-600 hover:text-red-700 mt-4"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                  Logout
-                </button>
-              )}
+  <button 
+    onClick={handleLogout}
+    className="flex items-center text-red-600 hover:text-red-700 mt-4"
+  >
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      className="h-5 w-5 mr-3" 
+      fill="none" 
+      viewBox="0 0 24 24" 
+      stroke="currentColor"
+    >
+      <path 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        strokeWidth={2} 
+        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" 
+      />
+    </svg>
+    Logout
+  </button>
+)}
             </div>
           </div>
         </div>

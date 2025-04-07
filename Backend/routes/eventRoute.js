@@ -5,6 +5,8 @@ const path = require('path');
 const fs = require('fs').promises;
 const Event = require('../models/Events');
 const mongoose = require('mongoose');
+const { authenticateUser } = require('../middleware/authMiddleware');
+const notificationService = require('../middleware/notificationService');
 
 // Validation middleware
 const validateEventData = (req, res, next) => {
@@ -83,6 +85,7 @@ const handleErrors = (err, req, res, next) => {
 
 // Create an event
 router.post('/admin/events', 
+    authenticateUser,
     upload.single('image'),
     handleErrors,
     validateEventData,
@@ -100,13 +103,28 @@ router.post('/admin/events',
                 image: req.file ? `/uploads/events/${req.file.filename}` : ''
             };
 
-            // Only add user_id if it's provided and valid
-            if (user_id && mongoose.Types.ObjectId.isValid(user_id)) {
-                eventData.user_id = user_id;
-            }
+            // Use the authenticated user ID if no user_id provided
+            const creatorId = user_id && mongoose.Types.ObjectId.isValid(user_id) 
+                ? user_id 
+                : req.user.userId;
+                
+            eventData.user_id = creatorId;
 
             const newEvent = new Event(eventData);
             await newEvent.save();
+            
+            // Send notifications to all users about the new event
+            try {
+                await notificationService.createEventNotification(
+                    newEvent._id,
+                    newEvent.title,
+                    creatorId
+                );
+                console.log('Event notifications sent successfully');
+            } catch (notifError) {
+                console.error('Failed to send event notifications:', notifError);
+                // Don't fail the event creation if notifications fail
+            }
             
             res.status(201).json({ message: 'Event created successfully', event: newEvent });
         } catch (error) {
@@ -143,6 +161,7 @@ router.get('/admin/events/:id', async (req, res) => {
 
 // Update an event
 router.put('/admin/events/:id',
+    authenticateUser,  // Added authentication middleware
     upload.single('image'),
     handleErrors,
     validateEventData,
@@ -192,7 +211,7 @@ router.put('/admin/events/:id',
 );
 
 // Delete an event
-router.delete('/admin/events/:id', async (req, res) => {
+router.delete('/admin/events/:id', authenticateUser, async (req, res) => {
     try {
         const event = await Event.findById(req.params.id);
         if (!event) {

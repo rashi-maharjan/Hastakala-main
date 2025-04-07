@@ -13,6 +13,7 @@ import AddArtwork from "./components/AddArtwork";
 import ArtworkDetail from "./pages/ArtworkDetail";
 import ManageArtwork from "./pages/ManageArtwork";
 import Cart from "./pages/Cart"; // Import the Cart component
+import NotificationPage from "./pages/NotificationPage"; // Import the Notification Page component
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
           <Route path="/artwork/:id" element={<ArtworkDetail />} />
           <Route path="/events" element={<Events />} />
           <Route path="/community" element={<Community />} />
+          <Route path="/notifications" element={<NotificationPage />} />
         </Route>
 
         {/* Public Routes */}

@@ -9,7 +9,8 @@ const app = express();
 // Enable CORS for frontend access
 app.use(cors({
   origin: 'http://localhost:5173', // Allow frontend requests
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // Added PATCH method
+  allowedHeaders: ['Content-Type', 'Authorization'], // Added allowed headers
   credentials: true
 }));
 
@@ -33,13 +34,15 @@ const authRoutes = require('./routes/authRoute');
 const eventRoutes = require('./routes/eventRoute');
 const communityRoutes = require('./routes/communityRoute');
 const userRoutes = require('./routes/userRoutes');
-const artworkRoutes = require('./routes/artworkRoutes'); // Import the new artwork routes
+const artworkRoutes = require('./routes/artworkRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api', eventRoutes);
 app.use('/api', communityRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/artwork', artworkRoutes); // Mount the artwork routes
+app.use('/api/artwork', artworkRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Connect to the database
 connectDB();

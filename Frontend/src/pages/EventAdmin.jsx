@@ -25,12 +25,19 @@ const EventAdmin = () => {
 
   const fetchEvents = async () => {
     try {
+      const token = localStorage.getItem('token');
       const response = await axios.get(
-        "http://localhost:3001/api/admin/events"
+        "http://localhost:3001/api/admin/events",
+        {
+          headers: {
+            "Authorization": token
+          }
+        }
       );
       setEvents(response.data);
     } catch (error) {
       setError("Failed to fetch events");
+      console.error("Error fetching events:", error);
     }
   };
 
@@ -85,12 +92,14 @@ const EventAdmin = () => {
     });
 
     try {
+      const token = localStorage.getItem('token');
       const response = await axios.post(
         "http://localhost:3001/api/admin/events",
         formData,
         {
           headers: {
             "Content-Type": "multipart/form-data",
+            "Authorization": token
           },
         }
       );
@@ -107,6 +116,7 @@ const EventAdmin = () => {
       setImagePreview(null);
       fetchEvents(); // Refresh the events list
     } catch (error) {
+      console.error("Error adding event:", error);
       setError(error.response?.data?.error || "Failed to add event");
     } finally {
       setLoading(false);
@@ -116,10 +126,19 @@ const EventAdmin = () => {
   const handleDelete = async (eventId) => {
     if (!window.confirm("Are you sure you want to delete this event?")) return;
     try {
-      await axios.delete(`http://localhost:3001/api/admin/events/${eventId}`);
+      const token = localStorage.getItem('token');
+      await axios.delete(
+        `http://localhost:3001/api/admin/events/${eventId}`,
+        {
+          headers: {
+            "Authorization": token
+          }
+        }
+      );
       setSuccess("Event deleted successfully!");
       fetchEvents(); // Refresh the events list
     } catch (error) {
+      console.error("Error deleting event:", error);
       setError("Failed to delete event");
     }
   };

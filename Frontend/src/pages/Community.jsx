@@ -178,69 +178,71 @@ const Community = () => {
   // New function to fetch profile images for multiple users
   const fetchUserProfileImages = async (userIds) => {
     try {
-      const token = localStorage.getItem('token');
-      
-      // Log the exact format of userIds
-      console.log('Raw userIds:', userIds);
-      
-      // Ensure userIds is an array of strings
-      const sanitizedUserIds = userIds.map(id => 
-        typeof id === 'object' && id.$oid ? id.$oid : String(id)
-      );
-      
-      console.log('Sanitized userIds:', sanitizedUserIds);
-      
-      const response = await axios.post('http://localhost:3001/api/users/profiles', 
-        { userIds: sanitizedUserIds }, 
-        { 
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          } 
-        }
-      );
-      
-      console.log('Full response from /users/profiles:', response.data);
-      
-      if (response.data && Array.isArray(response.data)) {
-        const newProfiles = response.data.reduce((acc, profile) => {
-          console.log('Individual profile:', {
-            id: profile._id,
-            profileImage: profile.profileImage,
-            name: profile.name
-          });
-          
-          if (profile.profileImage) {
-            const fullImageUrl = profile.profileImage.startsWith('/')
-              ? `http://localhost:3001${profile.profileImage}`
-              : profile.profileImage;
+        if (!userIds || userIds.length === 0) return {};
+
+        // Log the raw userIds for debugging
+        console.log('Raw userIds:', userIds);
+        
+        // Sanitize and convert userIds
+        const sanitizedUserIds = userIds.map(id => {
+            // If it's an object with $oid, use that
+            if (typeof id === 'object' && id.$oid) {
+                return id.$oid;
+            }
             
-            console.log(`Full profile image URL for user ${profile._id}:`, fullImageUrl);
-            acc[profile._id] = fullImageUrl;
-          } else {
-            console.log(`No profile image for user ${profile._id}`);
-          }
-          
-          return acc;
+            // Convert to string, trimming any whitespace
+            return String(id).trim();
+        }).filter(id => id); // Remove any empty strings
+        
+        console.log('Sanitized userIds:', sanitizedUserIds);
+        
+        // Get the token, ensuring it's a Bearer token
+        const token = localStorage.getItem('token');
+        const bearerToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+        
+        const response = await axios.post(
+            'http://localhost:3001/api/users/profiles', 
+            { userIds: sanitizedUserIds }, 
+            { 
+                headers: { 
+                    'Authorization': bearerToken,
+                    'Content-Type': 'application/json'
+                } 
+            }
+        );
+        
+        // Process the response
+        const newProfiles = response.data.reduce((acc, profile) => {
+            if (profile.profileImage) {
+                const fullImageUrl = profile.profileImage.startsWith('/')
+                    ? `http://localhost:3001${profile.profileImage}`
+                    : profile.profileImage;
+                
+                acc[profile._id] = fullImageUrl;
+            }
+            return acc;
         }, {});
         
-        console.log('Constructed new profiles:', newProfiles);
+        // Update user profiles
+        setUserProfiles(prev => ({
+            ...prev,
+            ...newProfiles
+        }));
         
-        setUserProfiles(prev => {
-          const updatedProfiles = { ...prev, ...newProfiles };
-          console.log('Updated user profiles state:', updatedProfiles);
-          return updatedProfiles;
-        });
-      }
+        return newProfiles;
     } catch (error) {
-      console.error('Detailed error fetching user profiles:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        config: error.config
-      });
+        // Comprehensive error logging
+        console.error('Detailed error fetching user profiles:', {
+            message: error.message,
+            response: error.response?.data,
+            status: error.response?.status,
+            config: error.config
+        });
+        
+        // Return an empty object to prevent breaking the application
+        return {};
     }
-  };
+};
 
   const getProfileImageUrl = (userId) => {
     console.log("Getting profile image for user ID:", userId);

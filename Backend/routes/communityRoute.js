@@ -4,6 +4,8 @@ const CommunityPost = require("../models/CommunityPost");
 const Comment = require("../models/Comment");
 const Like = require("../models/Like");
 const { authenticateUser } = require("../middleware/authMiddleware");
+const notificationService = require("../middleware/notificationService");
+const User = require('../models/Users'); // Add this line at the top of the file
 
 const router = express.Router();
 
@@ -129,23 +131,53 @@ router.delete("/posts/:id", authenticateUser, async (req, res) => {
 // Add a comment to a post
 router.post("/posts/:id/comments", authenticateUser, async (req, res) => {
     try {
-        const { comment_text, username } = req.body;
+        const { comment_text } = req.body;
         const user_id = req.user.userId;
+        
+        // Get the user's actual name
+        let username = "Anonymous";
+        try {
+            const user = await User.findById(user_id);
+            if (user && user.name) {
+                username = user.name;
+            }
+        } catch (userErr) {
+            console.error("Error fetching user details:", userErr);
+            // Continue with default username if error occurs
+        }
         
         // Validate required fields
         if (!comment_text) {
             return res.status(400).json({ error: "comment_text is required" });
         }
         
+        // Get post info for notification
+        const post = await CommunityPost.findById(req.params.id);
+        if (!post) {
+            return res.status(404).json({ error: "Post not found" });
+        }
+        
         const comment = new Comment({ 
             post_id: req.params.id, 
             user_id,
-            username: username || "Anonymous",
+            username: username, // Use actual username instead of request body
             comment_text 
         });
         
         await comment.save();
         await CommunityPost.findByIdAndUpdate(req.params.id, { $inc: { comments_count: 1 } });
+        
+        // Create notification (don't notify yourself)
+        if (post.user_id.toString() !== user_id) {
+            await notificationService.createCommentNotification(
+                req.params.id,
+                post.title,
+                comment._id,
+                post.user_id,
+                user_id,
+                username
+            );
+        }
         
         res.status(201).json(comment);
     } catch (err) {
@@ -210,15 +242,102 @@ router.delete("/posts/:postId/comments/:commentId", authenticateUser, async (req
     }
 });
 
+// Reply to a comment
+router.post("/posts/:postId/comments/:commentId/replies", authenticateUser, async (req, res) => {
+    try {
+        const { reply_text } = req.body;
+        const user_id = req.user.userId;
+        
+        // Get the user's actual name
+        let username = "Anonymous";
+        try {
+            const user = await User.findById(user_id);
+            if (user && user.name) {
+                username = user.name;
+            }
+        } catch (userErr) {
+            console.error("Error fetching user details:", userErr);
+            // Continue with default username if error occurs
+        }
+        
+        // Validate required fields
+        if (!reply_text) {
+            return res.status(400).json({ error: "reply_text is required" });
+        }
+        
+        // Find original comment
+        const originalComment = await Comment.findById(req.params.commentId);
+        if (!originalComment) {
+            return res.status(404).json({ error: "Original comment not found" });
+        }
+        
+        // Get post for the reply notification
+        const post = await CommunityPost.findById(req.params.postId);
+        if (!post) {
+            return res.status(404).json({ error: "Post not found" });
+        }
+        
+        // Create the reply as a new comment with parent_id
+        const reply = new Comment({
+            post_id: req.params.postId,
+            parent_id: req.params.commentId,
+            user_id,
+            username: username, // Use actual username instead of request body
+            comment_text: reply_text,
+            is_reply: true
+        });
+        
+        await reply.save();
+        
+        // Increment comments count for the post
+        await CommunityPost.findByIdAndUpdate(req.params.postId, { $inc: { comments_count: 1 } });
+        
+        // Create notification for the reply (don't notify yourself)
+        if (originalComment.user_id.toString() !== user_id) {
+            await notificationService.createReplyNotification(
+                req.params.postId,
+                post.title,
+                reply._id,
+                originalComment.user_id,
+                user_id,
+                username
+            );
+        }
+        
+        res.status(201).json(reply);
+    } catch (err) {
+        console.error("Error creating reply:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Like a post
 router.post("/posts/:id/like", authenticateUser, async (req, res) => {
     try {
         const user_id = req.user.userId;
         
+        // Get the user's actual name
+        let username = "Anonymous";
+        try {
+            const user = await User.findById(user_id);
+            if (user && user.name) {
+                username = user.name;
+            }
+        } catch (userErr) {
+            console.error("Error fetching user details:", userErr);
+            // Continue with default username if error occurs
+        }
+        
         // Check if user already liked this post
         const existingLike = await Like.findOne({ post_id: req.params.id, user_id });
         if (existingLike) {
             return res.status(400).json({ error: "You already liked this post" });
+        }
+        
+        // Get post info for notification
+        const post = await CommunityPost.findById(req.params.id);
+        if (!post) {
+            return res.status(404).json({ error: "Post not found" });
         }
         
         // Create new like
@@ -227,6 +346,17 @@ router.post("/posts/:id/like", authenticateUser, async (req, res) => {
         
         // Increment likes count
         await CommunityPost.findByIdAndUpdate(req.params.id, { $inc: { likes_count: 1 } });
+        
+        // Create notification (don't notify yourself)
+        if (post.user_id.toString() !== user_id) {
+            await notificationService.createLikeNotification(
+                req.params.id,
+                post.title,
+                post.user_id,
+                user_id,
+                username
+            );
+        }
         
         res.status(201).json(like);
     } catch (err) {
