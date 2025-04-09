@@ -12,8 +12,9 @@ import ArtistDashboard from "./pages/ArtistDashboard";
 import AddArtwork from "./components/AddArtwork";
 import ArtworkDetail from "./pages/ArtworkDetail";
 import ManageArtwork from "./pages/ManageArtwork";
-import Cart from "./pages/Cart"; // Import the Cart component
-import NotificationPage from "./pages/NotificationPage"; // Import the Notification Page component
+import Cart from "./pages/Cart";
+import NotificationPage from "./pages/NotificationPage";
+import UserManagement from "./pages/UserManagement"; // Import the new UserManagement component
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
         <Route element={<ProtectedRoute role="admin" />}>
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/admin-dashboard/events" element={<EventAdmin />} />
+          <Route path="/admin-dashboard/users" element={<UserManagement />} /> {/* Add UserManagement route */}
         </Route>
 
         {/* Artist Protected Routes - Only specific artist functionality */}

@@ -5,7 +5,9 @@ const path = require('path');
 const fs = require('fs');
 const mongoose = require('mongoose');
 const User = require('../models/Users');
-const { authenticateUser } = require('../middleware/authMiddleware');
+const CommunityPost = require('../models/CommunityPost');
+const Comment = require('../models/Comment');
+const { authenticateUser, authorizeRole } = require('../middleware/authMiddleware');
 
 // Create uploads directory if it doesn't exist
 const uploadDir = path.join(__dirname, '../public/uploads/profile');
@@ -147,49 +149,141 @@ router.get('/profile-image/:userId', async (req, res) => {
   }
 });
 
+// Fetch user profiles for multiple users
 router.post('/profiles', authenticateUser, async (req, res) => {
-    try {
-      const { userIds } = req.body;
-      
-      console.log('Backend: Received raw user IDs:', userIds);
-      
-      // Validate input
-      if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
-        return res.status(400).json({ error: 'Invalid user IDs', receivedIds: userIds });
-      }
-      
-      // Convert all IDs to strings and filter out any invalid ones
-      const validUserIds = userIds
-        .map(id => typeof id === 'string' ? id : String(id))
-        .filter(id => mongoose.Types.ObjectId.isValid(id));
-      
-      console.log('Backend: Validated user IDs:', validUserIds);
-      
-      // Find users by their IDs and return relevant profile information
-      const userProfiles = await User.find({ 
-        _id: { $in: validUserIds }
-      }, 'id _id profileImage name email'); // Added more fields for debugging
-      
-      console.log('Backend: Found user profiles:', userProfiles.map(profile => ({
-        id: profile._id,
-        name: profile.name,
-        profileImage: profile.profileImage
-      })));
-      
-      // If no profiles found, log and return
-      if (userProfiles.length === 0) {
-        console.log('No user profiles found for given IDs');
-        return res.status(404).json({ error: 'No user profiles found', requestedIds: userIds });
-      }
-      
-      res.json(userProfiles);
-    } catch (error) {
-      console.error('Backend: Error fetching user profiles:', error);
-      res.status(500).json({ 
-        error: 'Failed to fetch user profiles', 
-        details: error.message 
-      });
+  try {
+    const { userIds } = req.body;
+    
+    console.log('Backend: Received raw user IDs:', userIds);
+    
+    // Validate input
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({ error: 'Invalid user IDs', receivedIds: userIds });
     }
-  });
-  
+    
+    // Convert all IDs to strings and filter out any invalid ones
+    const validUserIds = userIds
+      .map(id => typeof id === 'string' ? id : String(id))
+      .filter(id => mongoose.Types.ObjectId.isValid(id));
+    
+    console.log('Backend: Validated user IDs:', validUserIds);
+    
+    // Find users by their IDs and return relevant profile information
+    const userProfiles = await User.find({ 
+      _id: { $in: validUserIds }
+    }, 'id _id profileImage name email'); // Added more fields for debugging
+    
+    console.log('Backend: Found user profiles:', userProfiles.map(profile => ({
+      id: profile._id,
+      name: profile.name,
+      profileImage: profile.profileImage
+    })));
+    
+    // If no profiles found, log and return
+    if (userProfiles.length === 0) {
+      console.log('No user profiles found for given IDs');
+      return res.status(404).json({ error: 'No user profiles found', requestedIds: userIds });
+    }
+    
+    res.json(userProfiles);
+  } catch (error) {
+    console.error('Backend: Error fetching user profiles:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch user profiles', 
+      details: error.message 
+    });
+  }
+});
+
+// Get all users (admin only)
+router.get('/all', authenticateUser, authorizeRole('admin'), async (req, res) => {
+  try {
+    const { page = 1, limit = 10, search = '' } = req.query;
+    
+    // Create search filter
+    const searchFilter = search 
+      ? { 
+          $or: [
+            { name: { $regex: search, $options: 'i' } },
+            { email: { $regex: search, $options: 'i' } }
+          ] 
+        }
+      : {};
+
+    // Pagination and search
+    const users = await User.find(searchFilter)
+      .select('-password')
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .sort({ createdAt: -1 });
+
+    // Count total users
+    const total = await User.countDocuments(searchFilter);
+
+    res.json({
+      users,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page
+    });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Update user role (admin only)
+router.put('/update-role/:userId', authenticateUser, authorizeRole('admin'), async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { role } = req.body;
+
+    // Validate role
+    const validRoles = ['normal_user', 'artist', 'admin'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ message: 'Invalid role' });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId, 
+      { role }, 
+      { new: true, select: '-password' }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ 
+      message: 'User role updated successfully', 
+      user 
+    });
+  } catch (error) {
+    console.error('Error updating user role:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Delete user (admin only)
+router.delete('/delete/:userId', authenticateUser, authorizeRole('admin'), async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Optional: Add additional checks before deletion
+    const user = await User.findByIdAndDelete(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Optional: Delete associated content (posts, comments, etc.)
+    await CommunityPost.deleteMany({ user_id: userId });
+    await Comment.deleteMany({ user_id: userId });
+
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 module.exports = router;

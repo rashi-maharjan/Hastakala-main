@@ -173,7 +173,29 @@ function NotificationPage() {
   if (loading) {
     return (
       <div className="container mx-auto p-4 max-w-4xl">
-        <h1 className="text-2xl font-bold mb-6">Notifications</h1>
+        <div className="flex items-center justify-between mb-6">
+          <button 
+            onClick={() => navigate(-1)} 
+            className="flex items-center text-gray-600 hover:text-gray-800"
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              className="h-6 w-6 mr-2" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={2} 
+                d="M10 19l-7-7m0 0l7-7m-7 7h18" 
+              />
+            </svg>
+            <span>Go Back</span>
+          </button>
+          <h1 className="text-2xl font-bold flex-grow text-center">Notifications</h1>
+        </div>
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
         </div>
@@ -184,7 +206,29 @@ function NotificationPage() {
   if (error) {
     return (
       <div className="container mx-auto p-4 max-w-4xl">
-        <h1 className="text-2xl font-bold mb-6">Notifications</h1>
+        <div className="flex items-center justify-between mb-6">
+          <button 
+            onClick={() => navigate(-1)} 
+            className="flex items-center text-gray-600 hover:text-gray-800"
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              className="h-6 w-6 mr-2" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={2} 
+                d="M10 19l-7-7m0 0l7-7m-7 7h18" 
+              />
+            </svg>
+            <span>Go Back</span>
+          </button>
+          <h1 className="text-2xl font-bold flex-grow text-center">Notifications</h1>
+        </div>
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
           <p>{error}</p>
           <button 
@@ -200,8 +244,30 @@ function NotificationPage() {
 
   return (
     <div className="container mx-auto p-4 max-w-4xl">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Notifications</h1>
+      <div className="flex items-center justify-between mb-6">
+        <button 
+          onClick={() => navigate(-1)} 
+          className="flex items-center text-gray-600 hover:text-gray-800"
+        >
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            className="h-6 w-6 mr-2" 
+            fill="none" 
+            viewBox="0 0 24 24" 
+            stroke="currentColor"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M10 19l-7-7m0 0l7-7m-7 7h18" 
+            />
+          </svg>
+          <span>Go Back</span>
+        </button>
+
+        <h1 className="text-2xl font-bold flex-grow text-center">Notifications</h1>
+
         {notifications.length > 0 && (
           <button 
             onClick={markAllAsRead}
@@ -220,7 +286,7 @@ function NotificationPage() {
           <p className="mt-4 text-lg text-gray-600">You don't have any notifications yet.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white rounded-lg shadow overflow-hidden mt-10">
           <ul className="divide-y divide-gray-200">
             {notifications.map((notification) => (
               <li 

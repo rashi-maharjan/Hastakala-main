@@ -146,8 +146,8 @@ const EventAdmin = () => {
   return (
     <div className="flex">
       <AdminNav />
-      <div className="flex-1 min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 ml-64">
-        <div className="max-w-2xl mx-auto">
+      <div className="flex-1 min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto">
           <div className="bg-white p-8 rounded-lg shadow-md">
             <h2 className="text-2xl font-bold text-gray-900 mb-8">
               Add New Event
