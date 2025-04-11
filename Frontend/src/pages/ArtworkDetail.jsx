@@ -122,8 +122,8 @@ const ArtworkDetail = () => {
         ) : artwork ? (
           <div className="bg-white rounded-lg shadow-sm overflow-hidden max-w-6xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
-              {/* Artwork Image */}
-              <div className="h-full">
+              {/* Artwork Image with Watermark */}
+              <div className="h-full relative">
                 <img
                   src={getImageUrl(artwork)}
                   alt={artwork.title}
@@ -134,6 +134,12 @@ const ArtworkDetail = () => {
                     e.target.onerror = null;
                   }}
                 />
+                {/* Watermark Overlay */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="text-5xl font-bold text-white opacity-30 transform rotate-[-45deg]">
+                    Hastakala
+                  </div>
+                </div>
               </div>
 
               {/* Artwork Details */}
