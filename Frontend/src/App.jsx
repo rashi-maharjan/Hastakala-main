@@ -13,8 +13,10 @@ import AddArtwork from "./components/AddArtwork";
 import ArtworkDetail from "./pages/ArtworkDetail";
 import ManageArtwork from "./pages/ManageArtwork";
 import Cart from "./pages/Cart";
+import EsewaSuccess from "./pages/EsewaSuccess";
+import EsewaFailure from "./pages/EsewaFailure";
 import NotificationPage from "./pages/NotificationPage";
-import UserManagement from "./pages/UserManagement"; // Import the new UserManagement component
+import UserManagement from "./pages/UserManagement";
 
 function App() {
   return (
@@ -27,7 +29,7 @@ function App() {
         <Route element={<ProtectedRoute role="admin" />}>
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/admin-dashboard/events" element={<EventAdmin />} />
-          <Route path="/admin-dashboard/users" element={<UserManagement />} /> {/* Add UserManagement route */}
+          <Route path="/admin-dashboard/users" element={<UserManagement />} />
         </Route>
 
         {/* Artist Protected Routes - Only specific artist functionality */}
@@ -45,6 +47,10 @@ function App() {
           <Route path="/community" element={<Community />} />
           <Route path="/notifications" element={<NotificationPage />} />
         </Route>
+
+        {/* Payment Routes */}
+        <Route path="/payment/success" element={<EsewaSuccess />} />
+        <Route path="/payment/failure" element={<EsewaFailure />} />
 
         {/* Public Routes */}
         <Route path="/cart" element={<Cart />} />

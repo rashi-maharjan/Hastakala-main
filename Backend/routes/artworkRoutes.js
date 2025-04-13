@@ -274,4 +274,41 @@ router.delete('/:id', authenticateUser, async (req, res) => {
   }
 });
 
+// Add this method to your artworkRoutes.js
+router.patch('/update-stock/:id', async (req, res) => {
+  try {
+    // Validate the ID format
+    const id = req.params.id.trim();
+
+    // Find the artwork
+    const artwork = await Artwork.findById(id);
+    
+    if (!artwork) {
+      return res.status(404).json({ message: 'Artwork not found' });
+    }
+
+    // Update the artwork's inStock status to false
+    artwork.inStock = false;
+    
+    // Save the updated artwork
+    await artwork.save();
+
+    // Populate artist info for response
+    const updatedArtwork = await Artwork.findById(id)
+      .populate('artist', 'name profileImage');
+
+    res.status(200).json({
+      message: 'Artwork stock status updated successfully',
+      artwork: updatedArtwork
+    });
+  } catch (error) {
+    console.error('Error updating artwork stock:', error);
+    res.status(500).json({ 
+      message: 'Server error', 
+      error: error.message,
+      details: 'Failed to update artwork stock status'
+    });
+  }
+});
+
 module.exports = router;

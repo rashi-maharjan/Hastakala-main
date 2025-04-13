@@ -1,16 +1,33 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Header from "../components/Header";
-import { getCartItems, removeFromCart, updateCartItemQuantity, getCartTotal, clearCart } from '../utils/CartUtils';
+import { 
+  getCartItems, 
+  removeFromCart, 
+  updateCartItemQuantity, 
+  getCartTotal, 
+  clearCart, 
+  getCurrentUserId 
+} from '../utils/CartUtils';
+import * as CryptoJS from 'crypto-js';
 
 // Backend URL for images
 const API_URL = 'http://localhost:3001';
+
+// Esewa Configuration
+const ESEWA_CONFIG = {
+  TEST_URL: 'https://rc-epay.esewa.com.np/api/epay/main/v2/form',
+  SUCCESS_URL: 'http://localhost:5173/payment/success',
+  FAILURE_URL: 'http://localhost:5173/payment/failure',
+  PRODUCT_CODE: 'EPAYTEST',
+  SECRET_KEY: '8gBm/:&EnhH.1/q'
+};
 
 function Cart() {
   const [cartItems, setCartItems] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [paymentMethod, setPaymentMethod] = useState("cashOnDelivery");
+  const [paymentMethod, setPaymentMethod] = useState("esewa");
 
   useEffect(() => {
     // Load cart items when component mounts
@@ -46,12 +63,6 @@ function Cart() {
     loadCartItems();
   };
 
-  const handleCheckout = () => {
-    alert("Your order has been placed! Thank you for shopping with us.");
-    clearCart();
-    loadCartItems();
-  };
-
   // Helper function to format image URL
   const getImageUrl = (item) => {
     // If it's an API image with relative path
@@ -84,6 +95,69 @@ function Cart() {
     
     // Format as currency with thousand separators
     return `Rs. ${parseFloat(price).toLocaleString()}`;
+  };
+
+  // Generate Esewa Signature
+  const generateEsewaSignature = (totalAmount, transactionUuid, productCode) => {
+    // Prepare the signature string as per Esewa's specification
+    const signatureString = `total_amount=${totalAmount},transaction_uuid=${transactionUuid},product_code=${productCode}`;
+    
+    // Generate HMAC-SHA256 signature and encode in Base64
+    const signature = CryptoJS.enc.Base64.stringify(
+      CryptoJS.HmacSHA256(signatureString, ESEWA_CONFIG.SECRET_KEY)
+    );
+    
+    return signature;
+  };
+
+  // Esewa Payment Integration
+  const handleEsewaPayment = () => {
+    // Prepare Esewa payment parameters
+    const amount = Math.round(total); // Main transaction amount
+    const taxAmount = 0; // Tax amount (set to 0 for test)
+    const totalAmount = amount + taxAmount;
+    const transactionUuid = `ORDER_${getCurrentUserId()}_${Date.now()}`;
+    
+    // Generate signature
+    const signature = generateEsewaSignature(
+      totalAmount, 
+      transactionUuid, 
+      ESEWA_CONFIG.PRODUCT_CODE
+    );
+    
+    // Create a form for Esewa payment
+    const form = document.createElement('form');
+    form.setAttribute('method', 'POST');
+    form.setAttribute('action', ESEWA_CONFIG.TEST_URL);
+
+    // Create input fields as per Esewa v2 specification
+    const fields = [
+      { name: 'amount', value: amount },
+      { name: 'tax_amount', value: taxAmount },
+      { name: 'total_amount', value: totalAmount },
+      { name: 'transaction_uuid', value: transactionUuid },
+      { name: 'product_code', value: ESEWA_CONFIG.PRODUCT_CODE },
+      { name: 'product_service_charge', value: 0 },
+      { name: 'product_delivery_charge', value: 0 },
+      { name: 'success_url', value: ESEWA_CONFIG.SUCCESS_URL },
+      { name: 'failure_url', value: ESEWA_CONFIG.FAILURE_URL },
+      { name: 'signed_field_names', value: 'total_amount,transaction_uuid,product_code' },
+      { name: 'signature', value: signature }
+    ];
+
+    // Add hidden inputs to the form
+    fields.forEach(field => {
+      const input = document.createElement('input');
+      input.setAttribute('type', 'hidden');
+      input.setAttribute('name', field.name);
+      input.setAttribute('value', field.value);
+      form.appendChild(input);
+    });
+
+    // Append form to body, submit, and remove
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
   };
 
   return (
@@ -164,33 +238,21 @@ function Cart() {
                   <div className="flex items-center gap-2">
                     <input
                       type="radio"
-                      id="cashOnDelivery"
+                      id="esewa"
                       className="accent-black"
                       name="payment"
-                      value="cashOnDelivery"
-                      checked={paymentMethod === "cashOnDelivery"}
-                      onChange={() => setPaymentMethod("cashOnDelivery")}
+                      value="esewa"
+                      checked={paymentMethod === "esewa"}
+                      onChange={() => setPaymentMethod("esewa")}
                     />
-                    <label htmlFor="cashOnDelivery">Cash on Delivery</label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input 
-                      type="radio" 
-                      id="bankTransfer"
-                      className="accent-black" 
-                      name="payment" 
-                      value="bankTransfer"
-                      checked={paymentMethod === "bankTransfer"}
-                      onChange={() => setPaymentMethod("bankTransfer")}
-                    />
-                    <label htmlFor="bankTransfer">Bank Transfer</label>
+                    <label htmlFor="esewa">Esewa</label>
                   </div>
                 </div>
                 <button
-                  onClick={handleCheckout}
+                  onClick={handleEsewaPayment}
                   className="px-20 py-2 text-center block mt-12 bg-black rounded-[22px] text-white text-base font-medium whitespace-nowrap w-full"
                 >
-                  <span>Order</span>
+                  <span>Pay</span>
                 </button>
               </div>
             )}

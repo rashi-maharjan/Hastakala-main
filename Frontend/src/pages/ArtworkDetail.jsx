@@ -79,7 +79,7 @@ const ArtworkDetail = () => {
   };
 
   const handleAddToCart = () => {
-    if (artwork) {
+    if (artwork && artwork.inStock) {
       addToCart(artwork);
       setAddedToCart(true);
       
@@ -155,111 +155,118 @@ const ArtworkDetail = () => {
                         src={artwork.artist.profileImage.startsWith('/') 
                           ? `${API_URL}${artwork.artist.profileImage}` 
                           : artwork.artist.profileImage} 
-                        alt={artwork.artist.name || 'Artist'} 
-                        className="w-full h-full object-cover"
-                      />
+                        alt={artwork.artist.name || 'Artist'}className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                          <span className="text-gray-500 text-xs">No image</span>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium">
+                        {typeof artwork.artist === 'object' 
+                          ? artwork.artist.name || 'Unknown Artist'
+                          : artwork.artist || 'Unknown Artist'}
+                      </p>
+                      <p className="text-sm text-gray-500">Artist</p>
+                    </div>
+                  </div>
+                  
+                  {/* Stock status */}
+                  <p className={`font-medium mb-6 ${artwork.inStock ? 'text-green-600' : 'text-red-600'}`}>
+                    {artwork.inStock ? 'In Stock' : 'Out of Stock'}
+                  </p>
+                  
+                  {/* Artwork specifications */}
+                  <div className="space-y-2 mb-8">
+                    {artwork.height && (
+                      <div className="flex">
+                        <span className="font-medium w-32">Height:</span>
+                        <span>{artwork.height}</span>
+                      </div>
+                    )}
+                    
+                    {artwork.width && (
+                      <div className="flex">
+                        <span className="font-medium w-32">Width:</span>
+                        <span>{artwork.width}</span>
+                      </div>
+                    )}
+                    
+                    {artwork.medium && (
+                      <div className="flex">
+                        <span className="font-medium w-32">Medium:</span>
+                        <span>{artwork.medium}</span>
+                      </div>
+                    )}
+                    
+                    {artwork.paper && (
+                      <div className="flex">
+                        <span className="font-medium w-32">Paper:</span>
+                        <span>{artwork.paper}</span>
+                      </div>
+                    )}
+                    
+                    {artwork.orientation && (
+                      <div className="flex">
+                        <span className="font-medium w-32">Orientation:</span>
+                        <span>{artwork.orientation}</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex">
+                      <span className="font-medium w-32">Frame:</span>
+                      <span>{artwork.frame || 'Not Included'}</span>
+                    </div>
+                    
+                    <div className="flex">
+                      <span className="font-medium w-32">Price:</span>
+                      <span className="font-medium">{artwork.price}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Description */}
+                  {artwork.description && (
+                    <div className="mb-8">
+                      <h2 className="text-xl font-semibold mb-2">Description</h2>
+                      <p className="text-gray-700">{artwork.description}</p>
+                    </div>
+                  )}
+  
+                  {/* Add to Cart button */}
+                  <div className="flex flex-col space-y-2">
+                    {artwork.inStock ? (
+                      <button 
+                        onClick={handleAddToCart}
+                        className="w-full bg-red-600 text-white py-3 px-6 rounded-lg hover:bg-red-700 transition-colors focus:outline-none"
+                        disabled={addedToCart}
+                      >
+                        {addedToCart ? 'Added to Cart!' : 'Add to Cart'}
+                      </button>
                     ) : (
-                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                        <span className="text-gray-500 text-xs">No image</span>
+                      <div className="w-full bg-gray-300 text-gray-600 py-3 px-6 rounded-lg text-center cursor-not-allowed">
+                        Out of Stock
+                      </div>
+                    )}
+                    
+                    {addedToCart && (
+                      <div className="text-green-600 text-center">
+                        Item added to your cart successfully!
                       </div>
                     )}
                   </div>
-                  <div>
-                    <p className="font-medium">
-                      {typeof artwork.artist === 'object' 
-                        ? artwork.artist.name || 'Unknown Artist'
-                        : artwork.artist || 'Unknown Artist'}
-                    </p>
-                    <p className="text-sm text-gray-500">Artist</p>
-                  </div>
-                </div>
-                
-                {/* Stock status */}
-                <p className="text-green-600 font-medium mb-6">In Stock</p>
-                
-                {/* Artwork specifications */}
-                <div className="space-y-2 mb-8">
-                  {artwork.height && (
-                    <div className="flex">
-                      <span className="font-medium w-32">Height:</span>
-                      <span>{artwork.height}</span>
-                    </div>
-                  )}
-                  
-                  {artwork.width && (
-                    <div className="flex">
-                      <span className="font-medium w-32">Width:</span>
-                      <span>{artwork.width}</span>
-                    </div>
-                  )}
-                  
-                  {artwork.medium && (
-                    <div className="flex">
-                      <span className="font-medium w-32">Medium:</span>
-                      <span>{artwork.medium}</span>
-                    </div>
-                  )}
-                  
-                  {artwork.paper && (
-                    <div className="flex">
-                      <span className="font-medium w-32">Paper:</span>
-                      <span>{artwork.paper}</span>
-                    </div>
-                  )}
-                  
-                  {artwork.orientation && (
-                    <div className="flex">
-                      <span className="font-medium w-32">Orientation:</span>
-                      <span>{artwork.orientation}</span>
-                    </div>
-                  )}
-                  
-                  <div className="flex">
-                    <span className="font-medium w-32">Frame:</span>
-                    <span>{artwork.frame || 'Not Included'}</span>
-                  </div>
-                  
-                  <div className="flex">
-                    <span className="font-medium w-32">Price:</span>
-                    <span className="font-medium">{artwork.price}</span>
-                  </div>
-                </div>
-                
-                {/* Description */}
-                {artwork.description && (
-                  <div className="mb-8">
-                    <h2 className="text-xl font-semibold mb-2">Description</h2>
-                    <p className="text-gray-700">{artwork.description}</p>
-                  </div>
-                )}
-
-                {/* Add to Cart button */}
-                <div className="flex flex-col space-y-2">
-                  <button 
-                    onClick={handleAddToCart}
-                    className="w-full bg-red-600 text-white py-3 px-6 rounded-lg hover:bg-red-700 transition-colors focus:outline-none"
-                    disabled={addedToCart}
-                  >
-                    {addedToCart ? 'Added to Cart!' : 'Add to Cart'}
-                  </button>
-                  
-                  {addedToCart && (
-                    <div className="text-green-600 text-center">
-                      Item added to your cart successfully!
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-lg text-gray-500">Artwork not found.</p>
-          </div>
-        )}
-      </main>
-    </div>
-  );
-};
-
-export default ArtworkDetail;
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-lg text-gray-500">Artwork not found.</p>
+            </div>
+          )}
+        </main>
+      </div>
+    );
+  };
+  
+  export default ArtworkDetail;
