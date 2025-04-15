@@ -17,14 +17,16 @@ import EsewaSuccess from "./pages/EsewaSuccess";
 import EsewaFailure from "./pages/EsewaFailure";
 import NotificationPage from "./pages/NotificationPage";
 import UserManagement from "./pages/UserManagement";
-
-function App() {
+import OrderConfirmation from "./pages/OrderConfirmation";
+import ChangePassword from "./components/ChangePassword";
+import Profile from "./pages/Profile";
+import SearchResults from "./pages/SearchResults"; function App() {
   return (
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        
+
         {/* Admin Protected Routes */}
         <Route element={<ProtectedRoute role="admin" />}>
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
@@ -46,6 +48,10 @@ function App() {
           <Route path="/events" element={<Events />} />
           <Route path="/community" element={<Community />} />
           <Route path="/notifications" element={<NotificationPage />} />
+          <Route path="/order-confirmation" element={<OrderConfirmation />} />
+          <Route path="/search-results" element={<SearchResults />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/change-password" element={<ChangePassword />} />
         </Route>
 
         {/* Payment Routes */}

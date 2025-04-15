@@ -36,6 +36,7 @@ const communityRoutes = require('./routes/communityRoute');
 const userRoutes = require('./routes/userRoutes');
 const artworkRoutes = require('./routes/artworkRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const searchRoutes = require('./routes/searchRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api', eventRoutes);
@@ -43,6 +44,7 @@ app.use('/api', communityRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/artwork', artworkRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/search', searchRoutes);
 
 // Connect to the database
 connectDB();

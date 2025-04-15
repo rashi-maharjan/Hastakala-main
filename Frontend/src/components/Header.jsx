@@ -15,9 +15,9 @@ function Header() {
   const [isLoading, setIsLoading] = useState(true);
   const [cartItemsCount, setCartItemsCount] = useState(0);
   const [notificationCount, setNotificationCount] = useState(0); // Add notification count state
+  const [searchQuery, setSearchQuery] = useState('');
   const dropdownRef = useRef(null);
-
-  // These functions can be removed as we're now handling this logic inline in handleLogout
+  const searchRef = useRef(null);
 
   useEffect(() => {
     // Get user data from localStorage
@@ -26,7 +26,7 @@ function Header() {
         const userStr = localStorage.getItem('user');
         const token = localStorage.getItem('token');
         const role = localStorage.getItem('role');
-        
+
         if (userStr && token) {
           const userData = JSON.parse(userStr);
           setUser(userData);
@@ -61,14 +61,14 @@ function Header() {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    
+
     // Listen for cart updates
     const handleCartUpdate = () => {
       updateCartCount();
     };
-    
+
     window.addEventListener("cartUpdated", handleCartUpdate);
-    
+
     // Listen for notification updates
     const handleNotificationUpdate = () => {
       const token = localStorage.getItem('token');
@@ -76,9 +76,9 @@ function Header() {
         fetchNotificationCount(token);
       }
     };
-    
+
     window.addEventListener("notificationUpdated", handleNotificationUpdate);
-    
+
     // Set up polling for notifications (every 30 seconds)
     const notificationPoll = setInterval(() => {
       const token = localStorage.getItem('token');
@@ -86,7 +86,7 @@ function Header() {
         fetchNotificationCount(token);
       }
     }, 30000);
-    
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       window.removeEventListener("cartUpdated", handleCartUpdate);
@@ -115,6 +115,27 @@ function Header() {
     setCartItemsCount(count);
   };
 
+  // Search functionality
+  const handleSearch = async (e) => {
+    e.preventDefault();
+
+    if (!searchQuery.trim()) return;
+
+    try {
+      const response = await axios.get(`http://localhost:3001/api/search?query=${encodeURIComponent(searchQuery)}`);
+      navigate('/search-results', {
+        state: {
+          query: searchQuery,
+          results: response.data
+        }
+      });
+      setSearchQuery(''); // Clear search input after navigation
+    } catch (error) {
+      console.error('Search error:', error);
+      // Optionally show an error message to the user
+    }
+  };
+
   const handleLogout = () => {
     // Get the current user ID directly
     let userId = 'guest';
@@ -127,31 +148,31 @@ function Header() {
     } catch (error) {
       console.error('Error getting user ID:', error);
     }
-    
+
     // Create cart keys inline
     const userCartKey = `cart_${userId}`;
     const guestCartKey = `cart_guest`;
-    
+
     // Clear user authentication data
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     localStorage.removeItem('role');
-    
+
     // Reset state
     setUser(null);
     setUserRole(null);
     setIsDropdownOpen(false);
     setNotificationCount(0);
-    
+
     // Initialize guest cart if needed
     if (!localStorage.getItem(guestCartKey)) {
       localStorage.setItem(guestCartKey, JSON.stringify([]));
     }
-    
+
     // Notify components that cart data has changed
     setCartItemsCount(0);
     window.dispatchEvent(new Event('cartUpdated'));
-    
+
     // Redirect to login page
     navigate('/login');
   };
@@ -204,28 +225,28 @@ function Header() {
           </button>
 
           <nav className="hidden xl:flex space-x-8">
-            <Link 
-              to="/feed" 
+            <Link
+              to="/feed"
               className={`text-gray-900 hover:text-primary ${location.pathname === "/feed" ? "text-primary" : ""}`}
             >
               Feed
             </Link>
-            <Link 
-              to="/community" 
+            <Link
+              to="/community"
               className={`text-gray-900 hover:text-primary ${location.pathname === "/community" ? "text-primary" : ""}`}
             >
               Community
             </Link>
-            <Link 
-              to="/events" 
+            <Link
+              to="/events"
               className={`text-gray-900 hover:text-primary ${location.pathname === "/events" ? "text-primary" : ""}`}
             >
               Events
             </Link>
             {/* Show Manage Artwork link only for artists */}
             {userRole === 'artist' && (
-              <Link 
-                to="/manage-artwork" 
+              <Link
+                to="/manage-artwork"
                 className={`text-gray-900 hover:text-primary ${location.pathname === "/manage-artwork" ? "text-primary" : ""}`}
               >
                 Manage Artwork
@@ -233,35 +254,40 @@ function Header() {
             )}
           </nav>
 
-          <div className="hidden xl:block relative w-1/3">
-            <input
-              type="search"
-              placeholder="Search"
-              className="border rounded-3xl py-2 pr-4 pl-10 placeholder-black outline-none bg-gray-200/70 w-full"
-            />
-            <svg
-              className="absolute top-1/4 left-3"
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 25 24"
-              fill="none"
-            >
-              <path
-                d="M11.7188 18.5C15.5847 18.5 18.7188 15.366 18.7188 11.5C18.7188 7.63401 15.5847 4.5 11.7188 4.5C7.85276 4.5 4.71875 7.63401 4.71875 11.5C4.71875 15.366 7.85276 18.5 11.7188 18.5Z"
-                stroke="#000D26"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+          <div className="hidden xl:block relative w-1/3" ref={searchRef}>
+            <form onSubmit={handleSearch}>
+              <input
+                type="search"
+                placeholder="Search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="border rounded-3xl py-2 pr-4 pl-10 placeholder-black outline-none bg-gray-200/70 w-full"
               />
-              <path
-                d="M16.7188 16.5L19.7188 19.5"
-                stroke="#000D26"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+              <button type="submit" className="absolute top-1/4 left-3 bg-transparent border-none">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 25 24"
+                  fill="none"
+                >
+                  <path
+                    d="M11.7188 18.5C15.5847 18.5 18.7188 15.366 18.7188 11.5C18.7188 7.63401 15.5847 4.5 11.7188 4.5C7.85276 4.5 4.71875 7.63401 4.71875 11.5C4.71875 15.366 7.85276 18.5 11.7188 18.5Z"
+                    stroke="#000D26"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M16.7188 16.5L19.7188 19.5"
+                    stroke="#000D26"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            </form>
           </div>
 
           <div className="hidden xl:flex items-center space-x-4">
@@ -318,7 +344,7 @@ function Header() {
                   fill="#000D26"
                 />
                 <path
-                  d="M3.54004 5.19H5.27004C5.64256 5.19037 6.00179 5.32843 6.27868 5.57763C6.55557 5.82683 6.73057 6.16958 6.77004 6.54L7.50004 13.84C7.53514 14.2122 7.70885 14.5575 7.9867 14.8076C8.26455 15.0577 8.62625 15.1942 9.00004 15.19H18.3C18.6684 15.1899 19.0238 15.0543 19.2986 14.809C19.5734 14.5638 19.7483 14.226 19.79 13.86L20.46 7.86C20.4837 7.65255 20.4639 7.44244 20.4017 7.2431C20.3395 7.04377 20.2365 6.85962 20.099 6.70242C19.9616 6.54522 19.7929 6.41845 19.6036 6.33021C19.4144 6.24198 19.2088 6.19422 19 6.19H6.73004"
+                  d="M3.540045.19H5.27004C5.64256 5.19037 6.00179 5.32843 6.27868 5.57763C6.55557 5.82683 6.73057 6.16958 6.77004 6.54L7.50004 13.84C7.53514 14.2122 7.70885 14.5575 7.9867 14.8076C8.26455 15.0577 8.62625 15.1942 9.00004 15.19H18.3C18.6684 15.1899 19.0238 15.0543 19.2986 14.809C19.5734 14.5638 19.7483 14.226 19.79 13.86L20.46 7.86C20.4837 7.65255 20.4639 7.44244 20.4017 7.2431C20.3395 7.04377 20.2365 6.85962 20.099 6.70242C19.9616 6.54522 19.7929 6.41845 19.6036 6.33021C19.4144 6.24198 19.2088 6.19422 19 6.19H6.73004"
                   stroke="#000D26"
                   strokeWidth="1.5"
                   strokeLinecap="round"
@@ -331,12 +357,12 @@ function Header() {
                 </span>
               )}
             </Link>
-            
+
             {/* User Profile Image or Login Link */}
             {!isLoading && (
               user ? (
                 <div className="relative" ref={dropdownRef}>
-                  <button 
+                  <button
                     className="flex-shrink-0 focus:outline-none rounded-full"
                     onClick={toggleDropdown}
                   >
@@ -346,7 +372,7 @@ function Header() {
                       className="h-8 w-8 rounded-full object-cover"
                     />
                   </button>
-                  
+
                   {/* Dropdown menu */}
                   {isDropdownOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 ring-1 ring-black ring-opacity-5">
@@ -354,30 +380,23 @@ function Header() {
                         <div className="font-medium truncate">{user.name}</div>
                         <div className="truncate text-gray-500">{user.email}</div>
                       </div>
-                      <Link 
-                        to="/profile" 
+                      <Link
+                        to="/profile"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         onClick={() => setIsDropdownOpen(false)}
                       >
                         Profile
                       </Link>
                       {userRole === 'artist' && (
-                        <Link 
-                          to="/manage-artwork" 
+                        <Link
+                          to="/manage-artwork"
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           onClick={() => setIsDropdownOpen(false)}
                         >
                           Manage Artwork
                         </Link>
                       )}
-                      <Link 
-                        to="/settings" 
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => setIsDropdownOpen(false)}
-                      >
-                        Settings
-                      </Link>
-                      <button 
+                      <button
                         onClick={handleLogout}
                         className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                       >
@@ -392,46 +411,13 @@ function Header() {
                 </Link>
               )
             )}
-            
-            <Link to="#" className="text-gray-400 hover:text-gray-500">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-              >
-                <path
-                  d="M12 7.5C12.8284 7.5 13.5 6.82843 13.5 6C13.5 5.17157 12.8284 4.5 12 4.5C11.1716 4.5 10.5 5.17157 10.5 6C10.5 6.82843 11.1716 7.5 12 7.5Z"
-                  stroke="#000D26"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M12 13.5C12.8284 13.5 13.5 12.8284 13.5 12C13.5 11.1716 12.8284 10.5 12 10.5C11.1716 10.5 10.5 11.1716 10.5 12C10.5 12.8284 11.1716 13.5 12 13.5Z"
-                  stroke="#000D26"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M12 19.5C12.8284 19.5 13.5 18.8284 13.5 18C13.5 17.1716 12.8284 16.5 12 16.5C11.1716 16.5 10.5 17.1716 10.5 18C10.5 18.8284 11.1716 19.5 12 19.5Z"
-                  stroke="#000D26"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </Link>
           </div>
         </div>
       </div>
 
       <div
-        className={`fixed inset-y-0 right-0 z-50 w-64 bg-white shadow-lg transform ${
-          isSidePanelOpen ? "translate-x-0" : "translate-x-full"
-        } transition-transform duration-300 ease-in-out xl:hidden`}
+        className={`fixed inset-y-0 right-0 z-50 w-64 bg-white shadow-lg transform ${isSidePanelOpen ? "translate-x-0" : "translate-x-full"
+          } transition-transform duration-300 ease-in-out xl:hidden`}
       >
         <div className="p-6">
           <button
@@ -453,6 +439,21 @@ function Header() {
             </svg>
           </button>
 
+          {/* Mobile search */}
+          <div className="mb-6">
+            <form onSubmit={handleSearch}>
+              <input
+                type="search"
+                placeholder="Search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="border rounded-full py-2 px-4 w-full placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button type="submit" className="hidden">Search</button>
+            </form>
+          </div>
+
+          {/* Rest of the mobile side panel content */}
           <div className="mt-8">
             {!isLoading && user ? (
               <div className="flex items-center mb-6">
@@ -474,40 +475,31 @@ function Header() {
               </div>
             )}
 
-            <div className="mb-6">
-              <input
-                type="search"
-                placeholder="Search"
-                className="border rounded-full py-2 px-4 w-full placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
             <nav className="space-y-4">
-              <Link 
-                to="/feed" 
+              <Link
+                to="/feed"
                 className={`block ${location.pathname === "/feed" ? "text-primary" : "text-gray-700 hover:text-gray-900"}`}
                 onClick={() => setIsSidePanelOpen(false)}
               >
                 Feed
               </Link>
-              <Link 
-                to="/community" 
+              <Link
+                to="/community"
                 className={`block ${location.pathname === "/community" ? "text-primary" : "text-gray-700 hover:text-gray-900"}`}
                 onClick={() => setIsSidePanelOpen(false)}
               >
                 Community
               </Link>
-              <Link 
-                to="/events" 
+              <Link
+                to="/events"
                 className={`block ${location.pathname === "/events" ? "text-primary" : "text-gray-700 hover:text-gray-900"}`}
                 onClick={() => setIsSidePanelOpen(false)}
               >
                 Events
               </Link>
-              {/* Show Manage Artwork link only for artists in mobile menu too */}
               {userRole === 'artist' && (
-                <Link 
-                  to="/manage-artwork" 
+                <Link
+                  to="/manage-artwork"
                   className={`block ${location.pathname === "/manage-artwork" ? "text-primary" : "text-gray-700 hover:text-gray-900"}`}
                   onClick={() => setIsSidePanelOpen(false)}
                 >
@@ -558,70 +550,58 @@ function Header() {
                 onClick={() => setIsSidePanelOpen(false)}
               >
                 <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
+                  className="h-6 w-6"
                   fill="none"
-                  className="mr-3"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
                 >
                   <path
-                    d="M9.25 18.81C9.80228 18.81 10.25 18.3623 10.25 17.81C10.25 17.2577 9.80228 16.81 9.25 16.81C8.69772 16.81 8.25 17.2577 8.25 17.81C8.25 18.3623 8.69772 18.81 9.25 18.81Z"
-                    fill="currentColor"
-                  />
-                  <path
-                    d="M17.25 18.81C17.8023 18.81 18.25 18.3623 18.25 17.81C18.25 17.2577 17.8023 16.81 17.25 16.81C16.6977 16.81 16.25 17.2577 16.25 17.81C16.25 18.3623 16.6977 18.81 17.25 18.81Z"
-                    fill="currentColor"
-                  />
-                  <path
-                    d="M3.54004 5.19H5.27004C5.64256 5.19037 6.00179 5.32843 6.27868 5.57763C6.55557 5.82683 6.73057 6.16958 6.77004 6.54L7.50004 13.84C7.53514 14.2122 7.70885 14.5575 7.9867 14.8076C8.26455 15.0577 8.62625 15.1942 9.00004 15.19H18.3C18.6684 15.1899 19.0238 15.0543 19.2986 14.809C19.5734 14.5638 19.7483 14.226 19.79 13.86L20.46 7.86C20.4837 7.65255 20.4639 7.44244 20.4017 7.2431C20.3395 7.04377 20.2365 6.85962 20.099 6.70242C19.9616 6.54522 19.7929 6.41845 19.6036 6.33021C19.4144 6.24198 19.2088 6.19422 19 6.19H6.73004"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
-                Cart
                 {cartItemsCount > 0 && (
                   <span className="ml-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                     {cartItemsCount}
                   </span>
                 )}
               </Link>
-              
+
               {user && (
-  <button 
-    onClick={handleLogout}
-    className="flex items-center text-red-600 hover:text-red-700 mt-4"
-  >
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      className="h-5 w-5 mr-3" 
-      fill="none" 
-      viewBox="0 0 24 24" 
-      stroke="currentColor"
-    >
-      <path 
-        strokeLinecap="round" 
-        strokeLinejoin="round" 
-        strokeWidth={2} 
-        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" 
-      />
-    </svg>
-    Logout
-  </button>
-)}
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center text-red-600 hover:text-red-700 mt-4"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 mr-3"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                    />
+                  </svg>
+                  Logout
+                </button>
+              )}
             </div>
           </div>
         </div>
-      </div>
 
-      {isSidePanelOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 xl:hidden"
-          onClick={toggleSidePanel}
-        ></div>
-      )}
+        {isSidePanelOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 xl:hidden"
+            onClick={toggleSidePanel}
+          ></div>
+        )}
+        </div>
     </header>
   );
 }
