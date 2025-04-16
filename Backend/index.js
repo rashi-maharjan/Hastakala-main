@@ -6,6 +6,12 @@ const connectDB = require('./config/db');
 
 const app = express();
 
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'http://localhost:5173');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH');
+  next();
+});
 // Enable CORS for frontend access
 app.use(cors({
   origin: 'http://localhost:5173', // Allow frontend requests

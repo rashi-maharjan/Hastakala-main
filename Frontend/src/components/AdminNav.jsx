@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Home, Calendar, UserRound, Settings, LogOut, Menu } from "lucide-react";
-import logo from "../assets/images/logo.png";
+import logo from "../assets/images/white-logo.png";
 
 const AdminNav = () => {
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -96,7 +96,7 @@ const AdminNav = () => {
                 shadow-2xl shadow-gray-900/50`}>
                 <div className="p-4 flex items-center justify-center border-b border-gray-700">
                     <div className="flex items-center justify-center">
-                        <img src={logo} alt="logo" />
+                        <img src={logo} alt="logo"  width={150}/>
                     </div>
                 </div>
 
