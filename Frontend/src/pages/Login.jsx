@@ -12,6 +12,7 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -58,6 +59,10 @@ const Login = () => {
     }
   };
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
     <section
       className="backdrop-blur-3xl h-screen overflow-hidden flex justify-center py-20 relative before:absolute before:left-[50%] before:top-[20%] 2xl:before:top-[30%]
@@ -93,12 +98,21 @@ const Login = () => {
                   Password
                 </label>
                 <br />
-                <input
-                  className="w-full border border-black rounded-3xl py-2 px-5 mt-4 outline-none"
-                  type="password"
-                  id="password"
-                  onChange={(e) => setPassword(e.target.value)}
-                />
+                <div className="relative">
+                  <input
+                    className="w-full border border-black rounded-3xl py-2 px-5 mt-4 outline-none"
+                    type={showPassword ? "text" : "password"}
+                    id="password"
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-4 top-1/2 mt-2 transform -translate-y-1/2 text-gray-600 text-sm"
+                    onClick={togglePasswordVisibility}
+                  >
+                    {showPassword ? "Hide" : "Show"}
+                  </button>
+                </div>
               </div>
               <div className="mt-14 place-self-center text-center">
                 <button

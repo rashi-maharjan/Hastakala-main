@@ -8,6 +8,7 @@ function Register() {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("normal_user");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [profileImage, setProfileImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -47,6 +48,10 @@ function Register() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   const handleRegister = async (e) => {
@@ -216,13 +221,22 @@ function Register() {
                   Password
                 </label>
                 <br />
-                <input
-                  className="w-full border border-black rounded-3xl py-2 px-5 mt-4 outline-none"
-                  type="password"
-                  id="password"
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+                <div className="relative">
+                  <input
+                    className="w-full border border-black rounded-3xl py-2 px-5 mt-4 outline-none"
+                    type={showPassword ? "text" : "password"}
+                    id="password"
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-4 top-1/2 mt-2 transform -translate-y-1/2 text-gray-600 text-sm"
+                    onClick={togglePasswordVisibility}
+                  >
+                    {showPassword ? "Hide" : "Show"}
+                  </button>
+                </div>
               </div>
 
               <div className="mt-14 place-self-center text-center">
