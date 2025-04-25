@@ -286,7 +286,6 @@ const Feed = () => {
                       </svg>
                       <h3 className="text-lg font-semibold text-gray-900">Filter Artworks</h3>
                     </div>
-                    // Fix the SVG tag in the filter popup close button
                     <button
                       onClick={() => setShowFilterPopup(false)}
                       className="rounded-full p-1 hover:bg-gray-100 transition-colors focus:outline-none"
