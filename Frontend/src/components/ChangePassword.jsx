@@ -12,6 +12,24 @@ function ChangePassword() {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Add state variables for password visibility
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Toggle functions for password visibility
+  const toggleCurrentPasswordVisibility = () => {
+    setShowCurrentPassword(!showCurrentPassword);
+  };
+
+  const toggleNewPasswordVisibility = () => {
+    setShowNewPassword(!showNewPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
 
   // Function to handle form input changes
   const handleInputChange = (e) => {
@@ -120,15 +138,24 @@ function ChangePassword() {
                 >
                   Current Password
                 </label>
-                <input
-                  type="password"
-                  name="currentPassword"
-                  id="currentPassword"
-                  value={formData.currentPassword}
-                  onChange={handleInputChange}
-                  required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-                />
+                <div className="relative">
+                  <input
+                    type={showCurrentPassword ? "text" : "password"}
+                    name="currentPassword"
+                    id="currentPassword"
+                    value={formData.currentPassword}
+                    onChange={handleInputChange}
+                    required
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-600 text-sm"
+                    onClick={toggleCurrentPasswordVisibility}
+                  >
+                    {showCurrentPassword ? "Hide" : "Show"}
+                  </button>
+                </div>
               </div>
 
               <div>
@@ -138,16 +165,25 @@ function ChangePassword() {
                 >
                   New Password
                 </label>
-                <input
-                  type="password"
-                  name="newPassword"
-                  id="newPassword"
-                  value={formData.newPassword}
-                  onChange={handleInputChange}
-                  required
-                  minLength={8}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-                />
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    name="newPassword"
+                    id="newPassword"
+                    value={formData.newPassword}
+                    onChange={handleInputChange}
+                    required
+                    minLength={8}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-600 text-sm"
+                    onClick={toggleNewPasswordVisibility}
+                  >
+                    {showNewPassword ? "Hide" : "Show"}
+                  </button>
+                </div>
                 <p className="mt-1 text-xs text-gray-500">
                   Password must be at least 8 characters long
                 </p>
@@ -160,15 +196,24 @@ function ChangePassword() {
                 >
                   Confirm New Password
                 </label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  id="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    id="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    required
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-600 text-sm"
+                    onClick={toggleConfirmPasswordVisibility}
+                  >
+                    {showConfirmPassword ? "Hide" : "Show"}
+                  </button>
+                </div>
               </div>
 
               <div className="flex justify-between">
