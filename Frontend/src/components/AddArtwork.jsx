@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 
+// CHANGES MADE:
+// 1. Made all fields required except frame (without showing asterisks)
+// 2. Added validation for medium and paper fields to reject numeric values
+// 3. Made orientation field required
+// 4. Made height and width accept numeric values only (cm as standard unit)
+// 5. Made price accept numeric values only with automatic comma formatting
+
 // Backend URL
 const API_URL = 'http://localhost:3001';
 
@@ -95,6 +102,91 @@ const AddArtwork = ({ onArtworkAdded, editingArtwork, onArtworkUpdated }) => {
     }
   };
 
+  // Validate that input does not contain numeric values
+  const validateNonNumeric = (value) => {
+    // Check if the value contains any digits
+    return !/\d/.test(value);
+  };
+
+  // Handle medium change with improved validation
+  const handleMediumChange = (e) => {
+    const value = e.target.value;
+    // Always update the field value for better UX
+    setMedium(value);
+    
+    // Only show error if digits are present
+    if (value !== '' && !validateNonNumeric(value)) {
+      setError('Medium cannot contain numeric values');
+    } else {
+      // Only clear error if it was related to this field
+      if (error === 'Medium cannot contain numeric values') {
+        setError('');
+      }
+    }
+  };
+
+  // Handle paper change with improved validation
+  const handlePaperChange = (e) => {
+    const value = e.target.value;
+    // Always update the field value for better UX
+    setPaper(value);
+    
+    // Only show error if digits are present
+    if (value !== '' && !validateNonNumeric(value)) {
+      setError('Paper cannot contain numeric values');
+    } else {
+      // Only clear error if it was related to this field
+      if (error === 'Paper cannot contain numeric values') {
+        setError('');
+      }
+    }
+  };
+  
+  // Format price with commas (e.g., 1,000,000)
+  const formatPrice = (value) => {
+    // Remove all non-digit characters
+    const numericValue = value.replace(/[^\d]/g, '');
+    
+    // Insert commas for thousands
+    if (numericValue === '') return '';
+    
+    // Format with commas
+    return numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  };
+  
+  // Handle price change with numeric validation and formatting
+  const handlePriceChange = (e) => {
+    const rawValue = e.target.value;
+    
+    // Only update if it's numeric (allowing commas)
+    if (/^[0-9,]*$/.test(rawValue)) {
+      // Format the price with commas
+      const formattedValue = formatPrice(rawValue);
+      setPrice(formattedValue);
+      
+      if (error === 'Price must contain only numbers') {
+        setError('');
+      }
+    } else {
+      setError('Price must contain only numbers');
+    }
+  };
+  
+  // Handle numeric-only fields (height and width)
+  const handleNumericInput = (e, setter) => {
+    const value = e.target.value;
+    
+    // Always update the input value first for better UX
+    setter(value);
+    
+    // Then validate and show error if needed
+    if (value !== '' && !/^\d*\.?\d*$/.test(value)) {
+      setError('Height and width must contain numbers only');
+    } else if (error === 'Height and width must contain numbers only') {
+      setError('');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -114,12 +206,68 @@ const AddArtwork = ({ onArtworkAdded, editingArtwork, onArtworkUpdated }) => {
       return;
     }
     
+    if (!orientation) {
+      setError('Orientation is required');
+      return;
+    }
+    
+    // Check for required fields
+    if (!description.trim()) {
+      setError('Description is required');
+      return;
+    }
+    
+    if (!height.trim()) {
+      setError('Height is required');
+      return;
+    }
+    
+    if (!width.trim()) {
+      setError('Width is required');
+      return;
+    }
+    
+    if (!medium.trim()) {
+      setError('Medium is required');
+      return;
+    }
+    
+    if (!paper.trim()) {
+      setError('Paper is required');
+      return;
+    }
+    
+    // Validate that medium and paper don't have numeric values
+    if (medium && !validateNonNumeric(medium)) {
+      setError('Medium cannot contain numeric values');
+      return;
+    }
+    
+    if (paper && !validateNonNumeric(paper)) {
+      setError('Paper cannot contain numeric values');
+      return;
+    }
+    
+    // Validate height and width are numeric if provided
+    if (height && !/^\d*\.?\d*$/.test(height)) {
+      setError('Height must contain numbers only');
+      return;
+    }
+    
+    if (width && !/^\d*\.?\d*$/.test(width)) {
+      setError('Width must contain numbers only');
+      return;
+    }
+    
     try {
       setLoading(true);
       setError('');
       
+      // Remove commas from price for server submission
+      const numericPrice = price.replace(/,/g, '');
+      
       // Format price with Rs. prefix if not already present
-      const formattedPrice = price.includes('Rs.') ? price : `Rs. ${price}`;
+      const formattedPrice = numericPrice.includes('Rs.') ? numericPrice : `Rs. ${numericPrice}`;
       
       if (editingArtwork) {
         // Update existing artwork
@@ -151,13 +299,13 @@ const AddArtwork = ({ onArtworkAdded, editingArtwork, onArtworkUpdated }) => {
         formData.append('price', formattedPrice);
         formData.append('image', selectedImage);
         formData.append('inStock', inStock);
+        formData.append('orientation', orientation);
+        formData.append('description', description);
+        formData.append('height', height);
+        formData.append('width', width);
+        formData.append('medium', medium);
+        formData.append('paper', paper);
         
-        if (description) formData.append('description', description);
-        if (height) formData.append('height', height);
-        if (width) formData.append('width', width);
-        if (medium) formData.append('medium', medium);
-        if (paper) formData.append('paper', paper);
-        if (orientation) formData.append('orientation', orientation);
         if (frame) formData.append('frame', frame);
         
         const response = await axios.post(`${API_URL}/api/artwork`, formData, {
@@ -227,6 +375,7 @@ const AddArtwork = ({ onArtworkAdded, editingArtwork, onArtworkUpdated }) => {
               className="sr-only"
               id="artwork-image"
               ref={fileInputRef}
+              required={!editingArtwork}
             />
             <label htmlFor="artwork-image" className="cursor-pointer">
               <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -267,7 +416,7 @@ const AddArtwork = ({ onArtworkAdded, editingArtwork, onArtworkUpdated }) => {
             type="text"
             id="price"
             value={price}
-            onChange={(e) => setPrice(e.target.value)}
+            onChange={handlePriceChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             placeholder="10,000"
             required
@@ -284,23 +433,25 @@ const AddArtwork = ({ onArtworkAdded, editingArtwork, onArtworkUpdated }) => {
             type="text"
             id="height"
             value={height}
-            onChange={(e) => setHeight(e.target.value)}
+            onChange={(e) => handleNumericInput(e, setHeight)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             placeholder="15"
+            required
           />
         </div>
         
         <div>
           <label htmlFor="width" className="block text-sm font-medium text-gray-700 mb-1">
-            Width (cm)
+            Width (cm) 
           </label>
           <input
             type="text"
             id="width"
             value={width}
-            onChange={(e) => setWidth(e.target.value)}
+            onChange={(e) => handleNumericInput(e, setWidth)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             placeholder="10"
+            required
           />
         </div>
       </div>
@@ -308,15 +459,16 @@ const AddArtwork = ({ onArtworkAdded, editingArtwork, onArtworkUpdated }) => {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="medium" className="block text-sm font-medium text-gray-700 mb-1">
-            Medium
+            Medium 
           </label>
           <input
             type="text"
             id="medium"
             value={medium}
-            onChange={(e) => setMedium(e.target.value)}
+            onChange={handleMediumChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             placeholder="Acrylic"
+            required
           />
         </div>
         
@@ -328,9 +480,10 @@ const AddArtwork = ({ onArtworkAdded, editingArtwork, onArtworkUpdated }) => {
             type="text"
             id="paper"
             value={paper}
-            onChange={(e) => setPaper(e.target.value)}
+            onChange={handlePaperChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             placeholder="Canvas"
+            required
           />
         </div>
       </div>
@@ -345,6 +498,7 @@ const AddArtwork = ({ onArtworkAdded, editingArtwork, onArtworkUpdated }) => {
             value={orientation}
             onChange={(e) => setOrientation(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            required
           >
             <option value="">Select Orientation</option>
             <option value="Portrait">Portrait</option>
@@ -382,6 +536,7 @@ const AddArtwork = ({ onArtworkAdded, editingArtwork, onArtworkUpdated }) => {
           rows={4}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
           placeholder="Describe your artwork..."
+          required
         />
       </div>
       

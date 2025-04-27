@@ -41,7 +41,7 @@ const Feed = () => {
   // Filter options
   const filterOptions = {
     medium: ['Acrylic', 'Oil', 'Watercolor', 'Ink', 'Pastel', 'Digital', 'Gouache', 'Charcoal', 'Markers', 'Pencil'],
-    paper: ['Waterpad', 'Sketch', 'Canvas', 'A4'],
+    paper: ['Waterpad', 'Sketch', 'Canvas', 'A(four)'],
     orientation: ['Landscape', 'Portrait'],
     frame: ['Included', 'Not Included'],
     stock: ['In Stock', 'Out of Stock']  // New stock filter options

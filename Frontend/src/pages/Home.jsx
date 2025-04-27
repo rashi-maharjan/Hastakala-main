@@ -4,10 +4,14 @@ import { Link } from "react-router-dom";
 const Home = () => {
   return (
     <section
-      className="backdrop-blur-3xl h-screen overflow-hidden flex justify-center relative before:absolute before:left-[50%] before:top-[20%] 2xl:before:top-[30%]
-     before:bg-primary/80 before:rounded-full before:size-[15%] 2xl:before:size-[15%] before:-z-[1] before:blur-[105px] after:absolute after:right-[%] after:top-[70%] 2xl:after:top-[60%] after:bg-red-600 after:rounded-full after:size-[15%] 2xl:after:size-[15%] after:-z-[1] after:blur-[105px]"
+      className="backdrop-blur-3xl h-screen overflow-hidden flex justify-center relative 
+      before:absolute before:left-[50%] before:top-[20%] 2xl:before:top-[30%]
+     before:bg-primary/80 before:rounded-full before:size-[15%] 2xl:before:size-[15%] 
+     before:-z-[1] before:blur-[105px] after:absolute after:right-[%] after:top-[70%] 2xl:after:top-[60%]
+      after:bg-red-600 after:rounded-full after:size-[15%] 2xl:after:size-[15%] after:-z-[1] after:blur-[105px]"
     >
-      <div className="container z-[10] relative before:absolute before:right-[55%] before:top-[30%] 2xl:before:top-[35%] before:bg-green-500 before:rounded-full before:size-[15%] 2xl:before:size-[15%] before:-z-[1] before:blur-[105px]">
+      <div className="container z-[10] relative before:absolute before:right-[55%] before:top-[30%] 2xl:before:top-[35%]
+       before:bg-green-500 before:rounded-full before:size-[15%] 2xl:before:size-[15%] before:-z-[1] before:blur-[105px]">
       {/* Navigation */}
       <nav className="p-6 flex justify-end">
         <Link to='/login' className="bg-black text-white hover:bg-black/90 rounded-full px-6 py-2 text-sm font-medium transition-colors">
