@@ -122,17 +122,17 @@ function SearchResults() {
             <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Community Posts</h2>
             <div className="space-y-3 sm:space-y-4">
               {results.communityPosts.map((post) => (
-                <Link 
-                  to={`/community/post/${post._id}`} 
-                  key={post._id} 
-                  className="block bg-gray-50 p-3 sm:p-4 rounded-lg hover:bg-gray-100 transition-colors"
+                <div
+                  key={post._id}
+                  className="block bg-gray-50 p-3 sm:p-4 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                  onClick={() => navigate('/community', { state: { scrollToPostId: post._id } })}
                 >
                   <h3 className="text-base sm:text-lg font-medium text-gray-900">{post.title}</h3>
                   <p className="text-sm sm:text-base text-gray-600 line-clamp-2">{post.content}</p>
                   <div className="mt-2 text-xs sm:text-sm text-gray-500">
                     By {post.username || 'Anonymous'}
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
           </section>

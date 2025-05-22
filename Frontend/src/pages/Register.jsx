@@ -133,40 +133,40 @@ function Register() {
             className="place-self-center mb-12 -z-[2]"
           />
           <form onSubmit={handleRegister}>
-            <div className="relative bg-white/20 max-sm:w-[300px] w-[470px] px-9 py-12 border-2 border-white rounded-xl">
-              {error && <p className="text-red-500 mb-4">{error}</p>}
+            <div className="relative bg-white/20 max-sm:w-[250px] w-[350px] px-5 py-8 border-2 border-white rounded-lg">
+              {error && <p className="text-red-500 mb-2 text-xs">{error}</p>}
               
               {/* Profile Image Upload */}
-              <div className="mb-6 flex flex-col items-center">
-                <label className="font-inter text-base mb-4">Profile Picture</label>
-                <div className="mb-4">
+              <div className="mb-4 flex flex-col items-center">
+                <label className="font-inter text-sm mb-2">Profile Picture</label>
+                <div className="mb-2">
                   {imagePreview ? (
                     <div className="relative">
                       <img 
                         src={imagePreview}
                         alt="Profile Preview" 
-                        className="w-28 h-28 object-cover rounded-full border-2 border-primary"
+                        className="w-20 h-20 object-cover rounded-full border border-primary"
                       />
                       <button
                         type="button"
                         onClick={handleRemoveImage}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 text-xs"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
                     </div>
                   ) : (
-                    <div className="w-28 h-28 rounded-full bg-gray-200 flex items-center justify-center border-2 border-primary">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center border border-primary">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                     </div>
                   )}
                 </div>
                 
-                <label className="cursor-pointer px-4 py-2 bg-primary/90 text-white rounded-full hover:bg-primary">
+                <label className="cursor-pointer px-3 py-1 bg-primary/90 text-xs text-white rounded-full hover:bg-primary">
                   <span>Choose Image</span>
                   <input
                     type="file"
@@ -179,84 +179,68 @@ function Register() {
               </div>
               
               <div>
-                <label htmlFor="Fullname" className="font-inter text-base">
-                  Name
-                </label>
+                <label htmlFor="Fullname" className="font-inter text-sm">Name</label>
                 <br />
                 <input
-                  className="w-full border border-black rounded-3xl py-2 px-5 mt-4 outline-none"
+                  className="w-full border border-black rounded-3xl py-1.5 px-4 mt-2 outline-none text-sm"
                   type="text"
                   id="Fullname"
                   onChange={(e) => setName(e.target.value)}
                   required
                 />
               </div>
-              <div className="mt-6">
-                <label htmlFor="Email" className="font-inter text-base">
-                  Email
-                </label>
+              <div className="mt-4">
+                <label htmlFor="Email" className="font-inter text-sm">Email</label>
                 <br />
                 <input
-                  className="w-full border border-black rounded-3xl py-2 px-5 mt-4 outline-none"
+                  className="w-full border border-black rounded-3xl py-1.5 px-4 mt-2 outline-none text-sm"
                   type="email"
                   id="Email"
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
-              <div className="mt-6">
-                <label className="font-inter text-base">Role:</label>
-                <br />
+              <div className="mt-4">
+                <label htmlFor="Role" className="font-inter text-sm">Role:</label>
                 <select
+                  className="w-full border border-black rounded-3xl py-1.5 px-4 mt-2 outline-none text-sm"
+                  id="Role"
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                  className="w-full border border-black rounded-3xl py-2 px-5 mt-4 outline-none"
                 >
                   <option value="normal_user">Normal User</option>
                   <option value="artist">Artist</option>
                 </select>
               </div>
-              <div className="mt-6">
-                <label htmlFor="password" className="font-inter text-base">
-                  Password
-                </label>
-                <br />
+              <div className="mt-4">
+                <label htmlFor="Password" className="font-inter text-sm">Password</label>
                 <div className="relative">
                   <input
-                    className="w-full border border-black rounded-3xl py-2 px-5 mt-4 outline-none"
+                    className="w-full border border-black rounded-3xl py-1.5 px-4 mt-2 outline-none text-sm pr-10"
                     type={showPassword ? "text" : "password"}
-                    id="password"
+                    id="Password"
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
                   <button
                     type="button"
-                    className="absolute right-4 top-1/2 mt-2 transform -translate-y-1/2 text-gray-600 text-sm"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-600"
                     onClick={togglePasswordVisibility}
+                    tabIndex={-1}
                   >
                     {showPassword ? "Hide" : "Show"}
                   </button>
                 </div>
               </div>
-
-              <div className="mt-14 place-self-center text-center">
-                <button
-                  type="submit"
-                  disabled={isUploading}
-                  className="bg-primary/90 px-5 py-3 w-64 mb-4 block text-center text-white rounded-3xl hover:bg-primary transition-all duration-200 ease-in-out disabled:opacity-70"
-                >
-                  {isUploading ? "Registering..." : "Register"}
-                </button>
-
-                <span>
-                  Already have an account?{" "}
-                  <a
-                    href="/login"
-                    className="text-primary whitespace-nowrap hover:underline"
-                  >
-                    Login
-                  </a>
-                </span>
+              <button
+                type="submit"
+                className="w-full mt-6 bg-primary text-white rounded-3xl py-2 text-sm font-semibold hover:bg-primary/80 transition-colors duration-200"
+                disabled={isUploading}
+              >
+                {isUploading ? "Registering..." : "Register"}
+              </button>
+              <div className="mt-2 text-center text-xs">
+                Already have an account? <span className="text-primary cursor-pointer" onClick={() => navigate('/login')}>Login</span>
               </div>
             </div>
           </form>

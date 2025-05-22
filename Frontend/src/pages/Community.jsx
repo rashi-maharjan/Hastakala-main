@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import Header from "../components/Header"
+import { useLocation } from "react-router-dom";
 
 const Community = () => {
   const [posts, setPosts] = useState([]);
@@ -28,6 +29,23 @@ const Community = () => {
     confirmText: "OK",
     showCancel: false
   });
+
+  const location = useLocation();
+  const postRefs = useRef({});
+
+  // Scroll to post if scrollToPostId is present in location.state
+  useEffect(() => {
+    if (location.state && location.state.scrollToPostId && posts.length > 0) {
+      const postId = location.state.scrollToPostId;
+      // Try to scroll to the post
+      setTimeout(() => {
+        const el = postRefs.current[postId];
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 100); // Wait for DOM to render
+    }
+  }, [location.state, posts]);
 
   // Function to show popup
   const showPopup = (message, type = "info", onConfirm = null, confirmText = "OK", showCancel = false) => {
@@ -785,6 +803,7 @@ const Community = () => {
           {posts.map((post) => (
             <div
               key={post._id}
+              ref={el => postRefs.current[post._id] = el}
               className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden"
             >
               {editingPost === post._id ? (

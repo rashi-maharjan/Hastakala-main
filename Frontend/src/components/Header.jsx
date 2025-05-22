@@ -243,15 +243,6 @@ function Header() {
             >
               Events
             </Link>
-            {/* Show Manage Artwork link only for artists */}
-            {userRole === 'artist' && (
-              <Link
-                to="/manage-artwork"
-                className={`text-gray-900 hover:text-primary ${location.pathname === "/manage-artwork" ? "text-primary" : ""}`}
-              >
-                Manage Artwork
-              </Link>
-            )}
           </nav>
 
           <div className="hidden xl:block relative w-1/3" ref={searchRef}>
