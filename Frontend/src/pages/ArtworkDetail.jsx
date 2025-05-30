@@ -74,6 +74,39 @@ const ArtworkDetail = () => {
     return 'https://via.placeholder.com/300';
   };
 
+  // Helper function to format dimensions with cm
+  const formatDimension = (value) => {
+    if (!value) return '';
+    
+    // If the value already contains 'cm', return as is
+    if (value.toString().toLowerCase().includes('cm')) {
+      return value;
+    }
+    
+    // Otherwise, append 'cm' to the value
+    return `${value} cm`;
+  };
+  
+  // Helper function to format price with commas
+  const formatPrice = (price) => {
+    if (!price) return '';
+    
+    // If price already has 'Rs.' prefix, don't modify it
+    if (price.toString().includes('Rs.')) {
+      // Ensure numbers in price have commas
+      return price.replace(/Rs\.\s*(\d+)/, (match, number) => {
+        // Format with commas
+        const formattedNumber = number.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return `Rs. ${formattedNumber}`;
+      });
+    }
+    
+    // Add prefix and commas for raw numbers
+    const numericValue = price.toString().replace(/[^\d]/g, '');
+    const formattedNumber = numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return `Rs. ${formattedNumber}`;
+  };
+
   const handleGoBack = () => {
     navigate(-1); // Go back to the previous page
   };
@@ -183,14 +216,14 @@ const ArtworkDetail = () => {
                     {artwork.height && (
                       <div className="flex">
                         <span className="font-medium w-32">Height:</span>
-                        <span>{artwork.height}</span>
+                        <span>{formatDimension(artwork.height)}</span>
                       </div>
                     )}
                     
                     {artwork.width && (
                       <div className="flex">
                         <span className="font-medium w-32">Width:</span>
-                        <span>{artwork.width}</span>
+                        <span>{formatDimension(artwork.width)}</span>
                       </div>
                     )}
                     
@@ -222,7 +255,7 @@ const ArtworkDetail = () => {
                     
                     <div className="flex">
                       <span className="font-medium w-32">Price:</span>
-                      <span className="font-medium">{artwork.price}</span>
+                      <span className="font-medium">{formatPrice(artwork.price)}</span>
                     </div>
                   </div>
                   

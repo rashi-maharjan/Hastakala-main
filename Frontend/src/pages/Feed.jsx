@@ -56,6 +56,26 @@ const Feed = () => {
   // Get user role from localStorage
   const userRole = localStorage.getItem("role");
 
+  // Helper function to format price with commas
+  const formatPrice = (price) => {
+    if (!price) return '';
+    
+    // If price already has 'Rs.' prefix, ensure it has commas
+    if (price.toString().includes('Rs.')) {
+      // Ensure numbers in price have commas
+      return price.replace(/Rs\.\s*(\d+)/, (match, number) => {
+        // Format with commas
+        const formattedNumber = number.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return `Rs. ${formattedNumber}`;
+      });
+    }
+    
+    // Add prefix and commas for raw numbers
+    const numericValue = price.toString().replace(/[^\d]/g, '');
+    const formattedNumber = numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return `Rs. ${formattedNumber}`;
+  };
+
   // Fallback artworks data in case API fails
   const fallbackArtworks = [
     { title: "Peace and Harmony", price: "Rs. 30,000", image: peace, _id: "fallback1", medium: "Acrylic", paper: "Canvas", orientation: "Landscape", frame: "Included", inStock: true },
@@ -492,7 +512,7 @@ const Feed = () => {
                 </div>
                 <div className="p-3">
                   <h3 className="font-medium text-gray-900 line-clamp-1">{artwork.title}</h3>
-                  <p className="text-gray-700 font-semibold mt-1">{artwork.price}</p>
+                  <p className="text-gray-700 font-semibold mt-1">{formatPrice(artwork.price)}</p>
                   <p className={`text-sm mt-1 ${artwork.inStock ? 'text-green-600' : 'text-red-600'}`}>
                     {artwork.inStock ? 'Available' : 'Sold Out'}
                   </p>

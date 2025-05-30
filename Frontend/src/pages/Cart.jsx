@@ -84,17 +84,21 @@ function Cart() {
     return 'https://via.placeholder.com/300';
   };
 
-  // Format price for display
+  // Format price for display with thousand separators
   const formatPrice = (price) => {
     if (!price) return 'Rs. 0';
     
     // If it already has currency format (Rs. X,XXX)
     if (typeof price === 'string' && price.includes('Rs.')) {
-      return price;
+      // Extract the numeric part and reformat
+      const numericPart = price.replace('Rs.', '').trim();
+      const parsedPrice = parseFloat(numericPart.replace(/,/g, ''));
+      if (isNaN(parsedPrice)) return price; // Return original if parsing fails
+      return `Rs. ${parsedPrice.toLocaleString('en-IN')}`;
     }
     
-    // Format as currency with thousand separators
-    return `Rs. ${parseFloat(price).toLocaleString()}`;
+    // Format as currency with thousand separators (using Indian locale for comma separation)
+    return `Rs. ${parseFloat(price).toLocaleString('en-IN')}`;
   };
 
   // Generate Esewa Signature
