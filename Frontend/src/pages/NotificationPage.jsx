@@ -291,11 +291,10 @@ function NotificationPage() {
             {notifications.map((notification) => (
               <li 
                 key={notification._id} 
-                className={`relative hover:bg-gray-50 ${notification.isRead ? 'bg-white' : 'bg-blue-50'}`}
+                className={`relative ${notification.isRead ? 'bg-white' : 'bg-blue-50'}`}
               >
                 <div 
-                  className="px-4 py-4 sm:px-6 cursor-pointer"
-                  onClick={() => handleNotificationClick(notification)}
+                  className="px-4 py-4 sm:px-6"
                 >
                   <div className="flex items-center">
                     <div className="flex-shrink-0 mr-3">
